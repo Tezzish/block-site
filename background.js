@@ -1,34 +1,55 @@
-const blockedSites = browser.storage.local.get('blockedSites');
-console.log(blockedSites)
+// function to check if the tab is in the list of blocked sites in the extension's local storage
 
-// Function to check if a URL matches any blocked site patterns
-function isBlocked(url, blockedSites) {
-  const urlObj = new URL(url);
-  return blockedSites.some(pattern => {
-    // Simple pattern matching; you might need a more robust solution for wildcard patterns
-    console.log(pattern, urlObj.hostname)
-    const domain = pattern.replace('*://*.', '').replace('/*', '');
-    return urlObj.hostname.includes(domain);
-  });
-}
+/**
+ * Checks if the current tab is in the list of blocked sites.
+ *
+ * @param {string} url - The URL of the current tab.
+ * @param {function} callback - Called with the result of the check.
+ */
+function isBlocked(url, callback) {
+    browser.storage.local.get({blockedSites: []}, function(result) {
+        const blockedSites = result.blockedSites;
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname;
 
-browser.webRequest.onBeforeRequest.addListener(
-  details => {
-    return new Promise((resolve, reject) => {
-      browser.storage.local.get({blockedSites: []}, function(result) {
-        console.log(result.blockedSites);
-        if (isBlocked(details.url, result.blockedSites)) {
-          console.log(`Blocking request to ${details.url}`);
-          // To cancel the request:
-          // resolve({cancel: true});
-          // Or to redirect to a different URL:
-          resolve({redirectUrl: "https://example.com"});
-        } else {
-          resolve({}); // Do nothing if the URL is not blocked
-        }
-      });
+        const isBlocked = blockedSites.some((pattern) => {
+            // Extract the domain part from the pattern (e.g., `*.reddit.com` from `*://*.reddit.com/*`)
+            const patternDomain = pattern.replace(/^\*:\/\/\*\./, '').replace(/\/\*$/, '');
+
+            // Check if the hostname ends with the patternDomain
+            return hostname === patternDomain || hostname.endsWith(`.${patternDomain}`);
+        });
+
+        callback(isBlocked);
     });
-  },
-  {urls: ["<all_urls>"]}, // Adjust the pattern as needed
-  ["blocking"]
-);
+}
+// function to redirect the site if it's blocked and to show the blocked page
+/**
+ * Redirects the current tab to the blocked page if the site is blocked.
+ *
+ * @param {string} url - The URL of the current tab.
+ */
+function redirectIfBlocked(url) {
+    isBlocked(url, function(isBlocked) {
+        if (isBlocked) {
+            console.log("Redirecting to blocked page");
+            browser.tabs.update({url: "/blocked.html"});
+        }
+    });
+    }
+
+// Add an event listener to the tabs.onUpdated event
+// This event is fired when a tab is updated
+// The listener checks if the tab is in the list of blocked sites
+// If it is, the listener redirects the tab to the blocked page
+browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (changeInfo.url) {
+        redirectIfBlocked(changeInfo.url);
+    }
+    });
+
+const pattern = '*://*.example.com/*';
+const url = 'https://www.example.com/whatever';
+
+const regExp = new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*'));
+console.log(regExp.test(url)); // Should print true

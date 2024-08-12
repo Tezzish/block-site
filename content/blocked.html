@@ -1,0 +1,31 @@
+<!-- blocked.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blocked</title>
+</head>
+<body>
+    <h1>This site has been blocked by your extension.</h1>
+    <button id="unblockButton">Like to unblock?</button>
+    <!-- Unblock form -->
+    <form id="unblockRequestForm" style="visibility: hidden;">
+        <label for="reason">Reason for unblocking:</label>
+        <input type="text" id="reason" name="reason">
+        <label for="password">Password:</label>
+        <input type="password" id="passphrase" name="passphrase">
+        <select id="time" name="time">
+            <option value="5">5 minutes</option>
+            <option value="10">10 minutes</option>
+            <option value="15">15 minutes</option>
+            <option value="30">30 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="1440">24 hours</option>
+            <option value="forever">forever</option>
+        </select>
+        <button type="submit">Submit Request</button>
+    </form>
+    <script src="content/blocked.js"></script>
+</body>
+</html>
