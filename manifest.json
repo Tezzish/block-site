@@ -5,8 +5,9 @@
   "description": "Blocks specified websites.",
 
   "permissions": [
-    "storage",
     "activeTab",
+    "alarms",
+    "storage",
     "webRequest",
     "webRequestBlocking",
     "<all_urls>"
