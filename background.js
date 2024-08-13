@@ -45,7 +45,6 @@ function redirectIfBlocked(url) {
     });
 }
 
-// Function to handle temporary unblock requests
 /**
  * Handles the temporary unblock action.
  *
@@ -53,27 +52,39 @@ function redirectIfBlocked(url) {
  * @param {object} sender - The sender object containing the tab information.
  * @param {function} sendResponse - The function to send a response back.
  */
-function handleTempUnblock(message, sender, sendResponse) {
+function handleTempUnblock(message, sender) {
     const reason = message.reason;
+    console.log(message);
+  
     // Extract the original blocked URL from the sender's tab URL
     const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
     const blockedUrl = urlParams.get('blockedUrl');
+    
     if (!blockedUrl) {
-        sendResponse({ status: "error", message: "Blocked URL not found" });
-        return;
+      return Promise.resolve({ status: "error", message: "Blocked URL not found" });
     }
+  
     const url = new URL(blockedUrl);
     const pattern = `*://*.${url.hostname}/*`;
-
-    getFromStorage('tempUnblockReasons', {}).then(tempUnblockReasons => {
+  
+    // Get the temporary unblock reasons from storage and add the new reason
+    return getFromStorage('tempUnblockReasons', {})
+      .then(tempUnblockReasons => {
+        // Add the new reason to the list of reasons for the pattern
         const reasons = tempUnblockReasons[pattern] || [];
         reasons.push(reason);
+        // Update the reasons in storage
         tempUnblockReasons[pattern] = reasons;
         return setInStorage('tempUnblockReasons', tempUnblockReasons);
-    }).then(() => {
-        sendResponse({ status: "success", message: "Temporary unblock processed" });
-    });
-    return true; // Return true to indicate you want to send a response asynchronously
+      })
+      .then(() => {
+        // Return a success response
+        return { status: "success", message: "Temporary unblock processed" };
+      })
+      .catch(error => {
+        console.error("Error in handleTempUnblock:", error);
+        return { status: "error", message: "An error occurred while processing the unblock" };
+      });
 }
 
 // Add a listener for tab updates to redirect if the URL changes
@@ -84,8 +95,15 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 // Add a listener for messages sent from other parts of the extension
+// In your message listener
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.action === "tempUnblock") {
-        return handleTempUnblock(message, sender, sendResponse);
+      handleTempUnblock(message, sender)
+        .then(sendResponse)
+        .catch(error => {
+          console.error("Error in message listener:", error);
+          sendResponse({ status: "error", message: "An unexpected error occurred" });
+        });
+      return true; // This is important to indicate that we will send a response asynchronously
     }
-});
+  });

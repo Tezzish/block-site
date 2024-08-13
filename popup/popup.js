@@ -21,6 +21,8 @@ document.getElementById('addSite').addEventListener('click', () => {
         const updatedBlockedSites = [...result.blockedSites, pattern];
         // Save the updated list of blocked sites
         browser.storage.local.set({blockedSites: updatedBlockedSites});
+        // reload the current page
+        browser.tabs.reload(activeTab.id);
       });
       });
   });
