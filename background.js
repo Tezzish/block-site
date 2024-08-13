@@ -70,7 +70,7 @@ function redirectIfBlocked(url) {
  */
 function handleTempUnblock(message, sender) {
     const duration = parseInt(message.time, 10);
-    const reason = [message.reason, duration];
+    const reason = message.reason;
   
     // Extract the original blocked URL from the sender's tab URL
     const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
@@ -116,6 +116,7 @@ function addToTempUnblockedReasons(url, reason, duration) {
     .then(tempUnblockReasons => {
       const reasons = tempUnblockReasons[url] || [];
       reasons.push(tuple);
+      console.log(tuple);
       tempUnblockReasons[url] = reasons;
       return setInStorage('tempUnblockReasons', tempUnblockReasons);
     })

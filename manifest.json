@@ -31,5 +31,10 @@
 
   "web_accessible_resources": [
     "content/blocked.html"
-  ]
+  ],
+
+  "options_ui": {
+    "page": "options/options.html",
+    "chrome_style": true
+  }
 }
