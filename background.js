@@ -1,14 +1,4 @@
-// background.js
-
-// Utility function to get data from local storage
-function getFromStorage(key, defaultValue) {
-    return browser.storage.local.get({ [key]: defaultValue }).then(result => result[key]);
-}
-
-// Utility function to set data in local storage
-function setInStorage(key, value) {
-    return browser.storage.local.set({ [key]: value });
-}
+import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
 
 // Add a function to check if a URL is temporarily unblocked
 function isTemporarilyUnblocked(url) {
@@ -163,9 +153,4 @@ function handleAlarm(alarm) {
     .catch(error => {
       console.error("Error in handleAlarm:", error);
     });
-}
-
-function processUrl(url) {
-  const urlObj = new URL(url);
-  return `*://*.${urlObj.hostname}/*`;
 }

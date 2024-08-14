@@ -1,7 +1,4 @@
-// Utility function to get data from local storage
-function getFromStorage(key, defaultValue) {
-    return browser.storage.local.get({ [key]: defaultValue }).then(result => result[key]);
-}
+import { getFromStorage } from "../utils/utils.js";
 
 // Function to display blocked sites
 function displayBlockedSites() {
