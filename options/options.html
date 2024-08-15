@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>Extension Options</title>
 </head>
 <body>
@@ -12,6 +13,13 @@
 
     <h1>Unblock History</h1>
     <ul id="unblockHistoryList"></ul>
+
+    <!-- form for setting a passphrase -->
+     <form id="passphraseForm"> 
+        <label for="passphrase">Set Passphrase:</label>
+        <input type="password" id="passphraseInput" name="passphraseInput" required>
+        <button id="setPassphraseButton" type="submit">Save</button>
+     </form>
 
     <script src="options.js" type="module"></script>
 </body>

@@ -59,28 +59,40 @@ function redirectIfBlocked(url) {
  * @param {function} sendResponse - The function to send a response back.
  */
 function handleTempUnblock(message, sender) {
-    const duration = parseInt(message.time, 10);
-    const reason = message.reason;
-  
-    // Extract the original blocked URL from the sender's tab URL
-    const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
-    const blockedUrl = urlParams.get('blockedUrl');
-    
-    if (!blockedUrl) {
-      return Promise.resolve({ status: "error", message: "Blocked URL not found" });
-    }
-  
-    const pattern = processUrl(blockedUrl);
-  
-    return Promise.all([
-      addToTempUnblocked(pattern, duration),
-      addToTempUnblockedReasons(pattern, reason, duration)
-    ])
-    .then(() => ({ status: "success", message: "Temporary unblock processed" }))
-    .catch(error => {
-      console.error("Error in handleTempUnblock:", error);
-      return { status: "error", message: "An error occurred while processing the unblock" };
-    });
+  return getFromStorage("Passphrase").then(storedPassphrase => {
+      // if the passphrase is incorrect, return an error
+      if (message.passphrase !== storedPassphrase) {
+          console.log(message.passphrase);
+          console.log(storedPassphrase);
+          return { status: "error", message: "Incorrect passphrase" };
+      }
+
+      const duration = parseInt(message.time, 10);
+      const reason = message.reason;
+
+      // Extract the original blocked URL from the sender's tab URL
+      const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
+      const blockedUrl = urlParams.get('blockedUrl');
+
+      if (!blockedUrl) {
+          return { status: "error", message: "Blocked URL not found" };
+      }
+
+      const pattern = processUrl(blockedUrl);
+
+      return Promise.all([
+          addToTempUnblocked(pattern, duration),
+          addToTempUnblockedReasons(pattern, reason, duration)
+      ])
+      .then(() => ({ status: "success", message: "Temporary unblock processed" }))
+      .catch(error => {
+          console.error("Error in handleTempUnblock:", error);
+          return { status: "error", message: "An error occurred while processing the unblock" };
+      });
+  }).catch(error => {
+      console.error("Error retrieving passphrase from storage:", error);
+      return { status: "error", message: "An error occurred while retrieving the passphrase" };
+  });
 }
 
 // function for adding a URL to the list of temporarily unblocked sites

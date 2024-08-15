@@ -1,4 +1,4 @@
-import { getFromStorage } from "../utils/utils.js";
+import { getFromStorage, setInStorage, hashString } from "../utils/utils.js";
 
 // Function to display blocked sites
 function displayBlockedSites() {
@@ -77,9 +77,28 @@ function displayUnblockHistory() {
         });
 }
 
-// Call these functions when the options page loads
+function setPassphrase(event) {
+    event.preventDefault();
+    const passphraseInput = document.getElementById('passphraseInput');
+    // get the passphrase input value
+    const passphrase = passphraseInput.value;
+    // hash the passphrase
+    return hashString(passphrase).then(hashedPassphrase => {
+        console.log("saving hashed password")
+        // save the hashed passphrase to storage
+        return setInStorage('Passphrase', hashedPassphrase);
+    });
+}
+
+const passphraseForm = document.getElementById('passphraseForm');
+if (!passphraseForm) {
+  console.error("Passphrase form not found");
+}
+
+passphraseForm.addEventListener('submit', setPassphrase);
+
 document.addEventListener('DOMContentLoaded', () => {
     displayBlockedSites();
     displayTempUnblocks();
     displayUnblockHistory();
-});
+  });

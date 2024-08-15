@@ -21,6 +21,11 @@ unblockRequestForm.addEventListener('submit', function(event) {
         }).then(response => {
           if (response.status === 'success') {
             console.log(response.message);
+            // get the uri of the current tab
+            const url = new URL(window.location.href);
+            // redirect the current tab to the original site
+            window.location.replace
+            (url.searchParams.get('blockedUrl'));
           } else {
             console.error(response.message);
           }
@@ -38,3 +43,13 @@ unblockButton.addEventListener('click', function() {
     unblockButton.style.display = 'none';
 }
 );
+
+// listen to responses from the background script
+browser.runtime.onMessage.addListener((message, sender) => {
+    if (message.action === 'showUnblockForm') {
+        //set the visibility of the form to visible
+        unblockRequestForm.style.visibility = 'visible';
+        //set the visibility of the button to hidden
+        unblockButton.style.display = 'none';
+    }
+});
