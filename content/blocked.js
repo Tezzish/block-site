@@ -1,4 +1,4 @@
-import { hashString } from '../utils/utils.js';
+import { hashString, getFromStorage } from '../utils/utils.js';
 
 const unblockRequestForm = document.getElementById('unblockRequestForm');
 const unblockButton = document.getElementById('unblockButton');
@@ -6,6 +6,17 @@ const unblockButton = document.getElementById('unblockButton');
 // Description: This script is injected into the blocked page to handle the unblock request form
 unblockRequestForm.addEventListener('submit', function(event) {
     event.preventDefault();
+    // if there isn't a password in the storage, throw an error
+    getFromStorage('Passphrase').then(password => {
+        if (!password) {
+            // create a dialog box to show the error
+            alert('Passphrase not set, please set a passphrase in the extension options page');
+            throw new Error('Passphrase not set');
+        }
+    }).catch(error => {
+        console.error('Error in getting password:', error);
+        return;
+    });
     // get the parameters from the form
     const reason = document.getElementById('reason').value;
     const time = document.getElementById('time').value;
