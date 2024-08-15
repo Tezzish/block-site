@@ -1,13 +1,11 @@
 import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
 
 // Add a function to check if a URL is temporarily unblocked
-function isTemporarilyUnblocked(url) {
+async function isTemporarilyUnblocked(url) {
   const pattern = processUrl(url);
-  return getFromStorage('tempUnblocks', {})
-    .then(tempUnblocks => {
-      const expiryTime = tempUnblocks[pattern];
-      return expiryTime && expiryTime > Date.now();
-    });
+  const tempUnblocks = await getFromStorage('tempUnblocks', {});
+  const expiryTime = tempUnblocks[pattern];
+  return expiryTime && expiryTime > Date.now();
 }
 
 // Function to check if the tab is in the list of blocked sites in the extension's local storage
@@ -17,22 +15,18 @@ function isTemporarilyUnblocked(url) {
  * @param {string} url - The URL of the current tab.
  * @returns {Promise<boolean>} - A promise that resolves to the result of the check.
  */
-function isBlocked(url) {
-  return isTemporarilyUnblocked(url)
-    .then(isUnblocked => {
-      if (isUnblocked) {
-        return false;
-      }
-      return getFromStorage('blockedSites', []).then(blockedSites => {
-        const urlObj = new URL(url);
-        const hostname = urlObj.hostname;
+async function isBlocked(url) {
+  const isUnblocked = await isTemporarilyUnblocked(url);
+  if (isUnblocked) {
+    return false;
+  }
+  const blockedSites = await getFromStorage('blockedSites', []);
+  const hostname = new URL(url).hostname;
 
-        return blockedSites.some(pattern => {
-          const patternDomain = pattern.replace(/^\*:\/\/\*\./, '').replace(/\/\*$/, '');
-          return hostname === patternDomain || hostname.endsWith(`.${patternDomain}`);
-        });
-      });
-    });
+  return blockedSites.some(pattern => {
+    const patternDomain = pattern.replace(/^\*:\/\/\*\./, '').replace(/\/\*$/, '');
+    return hostname === patternDomain || hostname.endsWith(`.${patternDomain}`);
+  });
 }
 
 // Function to redirect the site if it's blocked and to show the blocked page
@@ -58,73 +52,60 @@ function redirectIfBlocked(url) {
  * @param {object} sender - The sender object containing the tab information.
  * @param {function} sendResponse - The function to send a response back.
  */
-function handleTempUnblock(message, sender) {
-  return getFromStorage("Passphrase").then(storedPassphrase => {
-      // if the passphrase is incorrect, return an error
-      if (message.passphrase !== storedPassphrase) {
-          console.log(message.passphrase);
-          console.log(storedPassphrase);
-          return { status: "error", message: "Incorrect passphrase" };
-      }
+async function handleTempUnblock(message, sender) {
+  try {
+    const storedPassphrase = await getFromStorage("Passphrase");
+    if (message.passphrase !== storedPassphrase) {
+      return { status: "error", message: "Incorrect passphrase" };
+    }
 
-      const duration = parseInt(message.time, 10);
-      const reason = message.reason;
+    const duration = parseInt(message.time, 10);
+    const reason = message.reason;
+    const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
+    const blockedUrl = urlParams.get('blockedUrl');
 
-      // Extract the original blocked URL from the sender's tab URL
-      const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
-      const blockedUrl = urlParams.get('blockedUrl');
+    if (!blockedUrl) {
+      return { status: "error", message: "Blocked URL not found" };
+    }
 
-      if (!blockedUrl) {
-          return { status: "error", message: "Blocked URL not found" };
-      }
+    const pattern = processUrl(blockedUrl);
+    await Promise.all([
+      addToTempUnblocked(pattern, duration),
+      addToTempUnblockedReasons(pattern, reason, duration)
+    ]);
 
-      const pattern = processUrl(blockedUrl);
-
-      return Promise.all([
-          addToTempUnblocked(pattern, duration),
-          addToTempUnblockedReasons(pattern, reason, duration)
-      ])
-      .then(() => ({ status: "success", message: "Temporary unblock processed" }))
-      .catch(error => {
-          console.error("Error in handleTempUnblock:", error);
-          return { status: "error", message: "An error occurred while processing the unblock" };
-      });
-  }).catch(error => {
-      console.error("Error retrieving passphrase from storage:", error);
-      return { status: "error", message: "An error occurred while retrieving the passphrase" };
-  });
+    return { status: "success", message: "Temporary unblock processed" };
+  } catch (error) {
+    console.error("Error in handleTempUnblock:", error);
+    return { status: "error", message: "An error occurred while processing the unblock" };
+  }
 }
 
 // function for adding a URL to the list of temporarily unblocked sites
-function addToTempUnblocked(url, duration) {
-  const expiryTime = Date.now() + duration * 60 * 1000;
-  return getFromStorage('tempUnblocks', {})
-    .then(tempUnblocks => {
-      tempUnblocks[url] = expiryTime;
-      return setInStorage('tempUnblocks', tempUnblocks);
-    })
-    .then(() => {
-      return browser.alarms.create(url, { when: expiryTime });
-    })
-    .catch(error => {
-      console.error("Error in addToTempUnblocked:", error);
-    });
+async function addToTempUnblocked(url, duration) {
+  try {
+    const expiryTime = Date.now() + duration * 60 * 1000;
+    const tempUnblocks = await getFromStorage('tempUnblocks', {});
+    tempUnblocks[url] = expiryTime;
+    await setInStorage('tempUnblocks', tempUnblocks);
+    await browser.alarms.create(url, { when: expiryTime });
+  } catch (error) {
+    console.error("Error in addToTempUnblocked:", error);
+  }
 }
 
 // function for adding a temp unblocked reason to the list of reasons
-function addToTempUnblockedReasons(url, reason, duration) {
-  const tuple = [reason, duration];
-  return getFromStorage('tempUnblockReasons', {})
-    .then(tempUnblockReasons => {
-      const reasons = tempUnblockReasons[url] || [];
-      reasons.push(tuple);
-      console.log(tuple);
-      tempUnblockReasons[url] = reasons;
-      return setInStorage('tempUnblockReasons', tempUnblockReasons);
-    })
-    .catch(error => {
-      console.error("Error in addToTempUnblockedReasons:", error);
-    });
+async function addToTempUnblockedReasons(url, reason, duration) {
+  try {
+    const tuple = [reason, duration];
+    const tempUnblockReasons = await getFromStorage('tempUnblockReasons', {});
+    const reasons = tempUnblockReasons[url] || [];
+    reasons.push(tuple);
+    tempUnblockReasons[url] = reasons;
+    await setInStorage('tempUnblockReasons', tempUnblockReasons);
+  } catch (error) {
+    console.error("Error in addToTempUnblockedReasons:", error);
+  }
 }
 
 // Add a listener for tab updates to redirect if the URL changes

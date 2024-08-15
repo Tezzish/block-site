@@ -9,7 +9,6 @@ unblockRequestForm.addEventListener('submit', function(event) {
     // if there isn't a password in the storage, throw an error
     getFromStorage('Passphrase').then(password => {
         if (!password) {
-            // create a dialog box to show the error
             alert('Passphrase not set, please set a passphrase in the extension options page');
             throw new Error('Passphrase not set');
         }
@@ -32,11 +31,9 @@ unblockRequestForm.addEventListener('submit', function(event) {
         }).then(response => {
           if (response.status === 'success') {
             console.log(response.message);
-            // get the uri of the current tab
+            // reload the current tab
             const url = new URL(window.location.href);
-            // redirect the current tab to the original site
-            window.location.replace
-            (url.searchParams.get('blockedUrl'));
+            window.location.replace(url.searchParams.get('blockedUrl'));
           } else {
             console.error(response.message);
           }
