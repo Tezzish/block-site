@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Options</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
   <style>
     table {
       width: 100%;
@@ -52,18 +54,17 @@
 </head>
 <body>
     <h1>Unblock Rules</h1>
-    <table id="unblock-rules-table">
-    <thead>
-        <tr>
-        <th>URL Pattern</th>
-        <th>Expiry Time</th>
-        <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        <!-- Unblock rules will be populated here -->
-    </tbody>
-    </table>
+    <table id="unblock-rules-table" class="table table-striped table-bordered">
+        <thead class="thead-dark">
+          <tr>
+            <th>URL Pattern</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Unblock rules will be populated here -->
+        </tbody>
+      </table>
     <div>
         <h2>Set Password</h2>
         <form id="password-form">
