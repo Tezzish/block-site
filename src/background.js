@@ -1,6 +1,14 @@
 import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
 
-// Add a function to check if a URL is temporarily unblocked
+// Utility Functions
+// -----------------
+
+/**
+ * Checks if a URL is temporarily unblocked.
+ *
+ * @param {string} url - The URL to check.
+ * @returns {Promise<boolean>} - A promise that resolves to true if the URL is temporarily unblocked.
+ */
 async function isTemporarilyUnblocked(url) {
   const pattern = processUrl(url);
   const tempUnblocks = await getFromStorage('tempUnblocks', {});
@@ -8,7 +16,6 @@ async function isTemporarilyUnblocked(url) {
   return expiryTime && expiryTime > Date.now();
 }
 
-// Function to check if the tab is in the list of blocked sites in the extension's local storage
 /**
  * Checks if the current tab is in the list of blocked sites.
  *
@@ -29,28 +36,30 @@ async function isBlocked(url) {
   });
 }
 
-// Function to redirect the site if it's blocked and to show the blocked page
 /**
  * Redirects the current tab to the blocked page if the site is blocked.
  *
  * @param {string} url - The URL of the current tab.
  */
 function redirectIfBlocked(url) {
-    isBlocked(url).then(isBlocked => {
-        if (isBlocked) {
-            const encodedUrl = encodeURIComponent(url);
-            const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
-            browser.tabs.update({ url: blockedPageUrl });
-        }
-    });
+  isBlocked(url).then(isBlocked => {
+    if (isBlocked) {
+      const encodedUrl = encodeURIComponent(url);
+      const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
+      browser.tabs.update({ url: blockedPageUrl });
+    }
+  });
 }
+
+// Temporary Unblock Functions
+// ---------------------------
 
 /**
  * Handles the temporary unblock action.
  *
  * @param {object} message - The message object containing the action and reason.
  * @param {object} sender - The sender object containing the tab information.
- * @param {function} sendResponse - The function to send a response back.
+ * @returns {Promise<object>} - A promise that resolves to the result of the unblock action.
  */
 async function handleTempUnblock(message, sender) {
   try {
@@ -81,7 +90,12 @@ async function handleTempUnblock(message, sender) {
   }
 }
 
-// function for adding a URL to the list of temporarily unblocked sites
+/**
+ * Adds a URL to the list of temporarily unblocked sites.
+ *
+ * @param {string} url - The URL to unblock.
+ * @param {number} duration - The duration in minutes for which the URL should be unblocked.
+ */
 async function addToTempUnblocked(url, duration) {
   try {
     const expiryTime = Date.now() + duration * 60 * 1000;
@@ -94,7 +108,13 @@ async function addToTempUnblocked(url, duration) {
   }
 }
 
-// function for adding a temp unblocked reason to the list of reasons
+/**
+ * Adds a temporary unblock reason to the list of reasons.
+ *
+ * @param {string} url - The URL to unblock.
+ * @param {string} reason - The reason for unblocking.
+ * @param {number} duration - The duration in minutes for which the URL should be unblocked.
+ */
 async function addToTempUnblockedReasons(url, reason, duration) {
   try {
     const tuple = [reason, duration];
@@ -108,6 +128,16 @@ async function addToTempUnblockedReasons(url, reason, duration) {
   }
 }
 
+// Permanent Unblock Functions
+// ---------------------------
+
+/**
+ * Handles the permanent unblock action.
+ *
+ * @param {object} message - The message object containing the action and reason.
+ * @param {object} sender - The sender object containing the tab information.
+ * @returns {Promise<object>} - A promise that resolves to the result of the unblock action.
+ */
 async function handlePermUnblock(message, sender) {
   try {
     const storedPassphrase = await getFromStorage("Passphrase");
@@ -132,43 +162,28 @@ async function handlePermUnblock(message, sender) {
   }
 }
 
+/**
+ * Removes a URL from the list of blocked sites.
+ *
+ * @param {string} pattern - The URL pattern to remove.
+ */
 async function removeFromBlockedSites(pattern) {
-  // get the list of blocked sites
   const blockedSites = await getFromStorage('blockedSites', []);
-  // remove the pattern from the list
   const newBlockedSites = blockedSites.filter(site => site !== pattern);
-  // save the updated list back to storage
   await setInStorage('blockedSites', newBlockedSites);
 }
 
-// Add a listener for tab updates to redirect if the URL changes
-browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.url) {
-        redirectIfBlocked(changeInfo.url);
-    }
-});
+// Alarm Handling
+// --------------
 
-// Add a listener for messages sent from other parts of the extension
-// In your message listener
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === "tempUnblock") {
-      handleTempUnblock(message, sender)
-        .then(sendResponse)
-        .catch(error => {
-          console.error("Error in message listener:", error);
-          sendResponse({ status: "error", message: "An unexpected error occurred" });
-        });
-      return true;
-    }
-  });
-
-browser.alarms.onAlarm.addListener(handleAlarm);
-
-// Function to handle alarm
+/**
+ * Handles the alarm event to remove expired temporary unblocks.
+ *
+ * @param {object} alarm - The alarm object.
+ */
 function handleAlarm(alarm) {
   const pattern = alarm.name;
-  
-  // Remove from tempUnblocks
+
   getFromStorage('tempUnblocks', {})
     .then(tempUnblocks => {
       if (tempUnblocks[pattern]) {
@@ -180,3 +195,37 @@ function handleAlarm(alarm) {
       console.error("Error in handleAlarm:", error);
     });
 }
+
+// Event Listeners
+// ---------------
+
+// Listener for tab updates to redirect if the URL changes
+browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url) {
+    redirectIfBlocked(changeInfo.url);
+  }
+});
+
+// Listener for messages sent from other parts of the extension
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "tempUnblock") {
+    handleTempUnblock(message, sender)
+      .then(sendResponse)
+      .catch(error => {
+        console.error("Error in message listener:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred" });
+      });
+    return true;
+  } else if (message.action === "permUnblock") {
+    handlePermUnblock(message, sender)
+      .then(sendResponse)
+      .catch(error => {
+        console.error("Error in message listener:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred" });
+      });
+    return true;
+  }
+});
+
+// Listener for alarm events
+browser.alarms.onAlarm.addListener(handleAlarm);

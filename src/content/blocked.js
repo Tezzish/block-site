@@ -35,9 +35,20 @@ unblockRequestForm.addEventListener('submit', function(event) {
             const url = new URL(window.location.href);
             window.location.replace(url.searchParams.get('blockedUrl'));
           } else {
+            alert(response.message);
             console.error(response.message);
           }
         }).catch(error => {
+          switch (error.message) {
+            case 'Incorrect passphrase':
+              alert('Incorrect passphrase');
+              break;
+            case 'Blocked URL not found':
+              alert('Blocked URL not found');
+              break;
+            default:
+              alert('Error in sending message');
+          }
           console.error("Error in sending message:", error);
         });
       });
