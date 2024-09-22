@@ -93,11 +93,20 @@ document.addEventListener('DOMContentLoaded', () => {
         
             // Add the <p> element before the list of reasons
             const reasonsParagraph = document.createElement('p');
+            if (!reasons[rule] || reasons[rule].length === 0) {
+                reasonsParagraph.textContent = 'No reasons provided';
+                accordionBody.appendChild(reasonsParagraph);
+                accordionCollapse.appendChild(accordionBody);
+                accordionItem.appendChild(accordionCollapse);
+                accordionContainer.appendChild(accordionItem);
+                return;
+            }
             reasonsParagraph.textContent = 'Reasons:';
             accordionBody.appendChild(reasonsParagraph);
         
             const reasonsList = document.createElement('ul');
             reasonsList.classList.add('list-group', 'reasons-list');
+                          
             (reasons[rule] || []).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
