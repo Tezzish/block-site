@@ -108,6 +108,39 @@ async function addToTempUnblockedReasons(url, reason, duration) {
   }
 }
 
+async function handlePermUnblock(message, sender) {
+  try {
+    const storedPassphrase = await getFromStorage("Passphrase");
+    if (message.passphrase !== storedPassphrase) {
+      return { status: "error", message: "Incorrect passphrase" };
+    }
+
+    const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
+    const blockedUrl = urlParams.get('blockedUrl');
+
+    if (!blockedUrl) {
+      return { status: "error", message: "Blocked URL not found" };
+    }
+
+    const pattern = processUrl(blockedUrl);
+    await removeFromBlockedSites(pattern);
+
+    return { status: "success", message: "Site unblocked" };
+  } catch (error) {
+    console.error("Error in handlePermUnblock:", error);
+    return { status: "error", message: "An error occurred while processing the unblock" };
+  }
+}
+
+async function removeFromBlockedSites(pattern) {
+  // get the list of blocked sites
+  const blockedSites = await getFromStorage('blockedSites', []);
+  // remove the pattern from the list
+  const newBlockedSites = blockedSites.filter(site => site !== pattern);
+  // save the updated list back to storage
+  await setInStorage('blockedSites', newBlockedSites);
+}
+
 // Add a listener for tab updates to redirect if the URL changes
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (changeInfo.url) {
