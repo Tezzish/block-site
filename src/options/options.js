@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.addEventListener('click', function(event) {
                 event.stopPropagation(); // Prevent the accordion from toggling when clicking the remove button
-                confirmAndRemoveUnblockRule(rule);
+                sendPermUnblockMessage(rule);
             });
         
             accordionHeader.appendChild(removeButton);
@@ -94,14 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add the <p> element before the list of reasons
             const reasonsParagraph = document.createElement('p');
             if (!reasons[rule] || reasons[rule].length === 0) {
-                reasonsParagraph.textContent = 'No reasons provided';
+                reasonsParagraph.textContent = 'No reasons for temporary unblocks provided.';
                 accordionBody.appendChild(reasonsParagraph);
                 accordionCollapse.appendChild(accordionBody);
                 accordionItem.appendChild(accordionCollapse);
                 accordionContainer.appendChild(accordionItem);
                 return;
             }
-            reasonsParagraph.textContent = 'Reasons:';
+            reasonsParagraph.textContent = 'Reasons for temporary unblocks:';
             accordionBody.appendChild(reasonsParagraph);
         
             const reasonsList = document.createElement('ul');
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.remove-rule-btn').forEach(button => {
             button.addEventListener('click', function(event) {
                 const rule = event.target.closest('.btn-link').textContent.trim();
-                confirmAndRemoveUnblockRule(rule);
+                sendPermUnblock(rule);
             });
         });
     }
@@ -146,28 +146,27 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    async function confirmAndRemoveUnblockRule(rule) {
+    async function sendPermUnblockMessage(pattern) {
         const storedPassphrase = await getFromStorage('Passphrase');
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
 
         hashString(inputPassphrase).then(hashedPassphrase => {
-            if (hashedPassphrase === storedPassphrase) {
-                removeFromBlockedSites(rule);
-            } else {
-                alert('Incorrect passphrase');
-            }
+            browser.runtime.sendMessage({
+                action: 'permUnblock',
+                passphrase: hashedPassphrase,
+                pattern: pattern
+            }).then(response => {
+                if (response.status === 'success') {
+                    alert(response.message);
+                    populateAccordion();
+                } else {
+                    alert(response.message);
+                }
+            })
         }).catch(error => {
             console.error('Error in hashing password:', error);
         });
     }
-
-    async function removeFromBlockedSites(pattern) {
-        const blockedSites = await getFromStorage('blockedSites', []);
-        const newBlockedSites = blockedSites.filter(site => site !== pattern);
-        await setInStorage('blockedSites', newBlockedSites);
-        populateAccordion();
-    }
-
     // Initial population of the accordion
     populateAccordion();
 });

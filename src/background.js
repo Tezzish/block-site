@@ -68,7 +68,7 @@ async function handleTempUnblock(message, sender) {
       return { status: "error", message: "Incorrect passphrase" };
     }
 
-    const duration = parseInt(message.time, 10);
+    const duration = parseInt(message.duration, 10);
     const reason = message.reason;
     const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
     const blockedUrl = urlParams.get('blockedUrl');
@@ -145,14 +145,12 @@ async function handlePermUnblock(message, sender) {
       return { status: "error", message: "Incorrect passphrase" };
     }
 
-    const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
-    const blockedUrl = urlParams.get('blockedUrl');
-
+    const pattern = message.pattern;
+    const blockedUrl = await getFromStorage('blockedSites', []).then(sites => sites.find(site => site === pattern));
     if (!blockedUrl) {
       return { status: "error", message: "Blocked URL not found" };
     }
 
-    const pattern = processUrl(blockedUrl);
     await removeFromBlockedSites(pattern);
 
     return { status: "success", message: "Site unblocked" };

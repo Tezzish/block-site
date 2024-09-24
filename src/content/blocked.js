@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       // get the parameters from the form
       const reason = document.getElementById('reason').value;
-      const time = document.getElementById('time').value;
+      const duration = document.getElementById('duration').value;
       const passphrase = document.getElementById('passphrase').value;
       // Hash the passphrase
       hashString(passphrase).then(hashedPassphrase => {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
           browser.runtime.sendMessage({
             action: "tempUnblock", 
             reason: reason, 
-            time: time, 
+            duration: duration, 
             passphrase: hashedPassphrase
           }).then(response => {
             if (response.status === 'success') {
