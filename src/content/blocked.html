@@ -15,21 +15,21 @@
         <div class="row">
             <div class="text-center">
                 <h1 id = "blocked-site" class="mb-4"><b>This site has been blocked by your extension.</b></h1>
-                <button id="unblockButton" class="btn btn-primary mb-3 mt-5">Like to unblock?</button>
+                <button id="unblock-button" class="mb-3 mt-5 button">Like to unblock?</button>
                 <!-- Unblock form -->
-                <form id="unblockRequestForm" class="text-left" style="visibility:hidden;">
-                    <div class="form-group">
+                <form id="unblock-request-form" class="text-left" style="visibility:hidden;">
+                    <div class="form-group" id="reason-div">
                         <label for="reason">Reason for unblocking:</label>
                         <input type="text" class="form-control" id="reason" name="reason">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="passphrase-div">
                         <label for="password">Passphrase:</label>
                         <input type="password" class="form-control" id="passphrase" name="passphrase">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="duration-div">
                         <label for="duration">Unblock duration:</label>
                         <select id="duration" name="duration" class="form-control">
-                            <option value="1">1 minute (test)</option>
+                            <option value="1">1 minute</option>
                             <option value="5">5 minutes</option>
                             <option value="10">10 minutes</option>
                             <option value="15">15 minutes</option>
@@ -38,7 +38,7 @@
                             <option value="1440">24 hours</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-success">Submit Request</button>
+                    <button type="submit" class="button">Submit Request</button>
                 </form>
             </div>
         </div>

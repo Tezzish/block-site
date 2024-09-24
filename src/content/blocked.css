@@ -1,22 +1,21 @@
 body {
     /* background: #00b4ff !important; */
-    background: linear-gradient(to bottom, #00b4ff, #00ffb4) !important;
-    color: #333;
     font: 100% Arial, Sans Serif;
     height: 100vh;
     margin: 0;
     padding: 0;
-    overflow-x: hidden;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #170946, #0075e2, #00b4ff, #00ffb4) !important;
+    background-size: 100% 100%;
 }
 
-body {
-    background: linear-gradient(to bottom, #170946, #0075e2, #00b4ff, #00ffb4) !important;
+html {
+    height: 100%;
 }
 
 #background-wrap {
     bottom: 0;
     left: 0;
-    /* padding-top: 100px; */
     position: fixed;
     right: 0;
     top: 0;
@@ -30,20 +29,23 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-    pointer-events: none; /* Ensure clouds don't interfere with other elements */
+    pointer-events: none;
 }
 
 .cloud {
     position: absolute;
+    visibility: hidden;
     bottom: 50%;
     width: 300px;
 }
+
 
 /* KEYFRAMES */
 
 @-webkit-keyframes animateCloud {
     0% {
         margin-left: -1000px;
+        visibility: visible;
     }
     100% {
         margin-left: 100%;
@@ -53,6 +55,8 @@ body {
 @-moz-keyframes animateCloud {
     0% {
         margin-left: -1000px;
+        visibility: visible;
+
     }
     100% {
         margin-left: 100%;
@@ -62,6 +66,7 @@ body {
 @keyframes animateCloud {
     0% {
         margin-left: -1000px;
+        visibility: visible;
     }
     100% {
         margin-left: 100%;
@@ -74,40 +79,24 @@ body {
 	-webkit-animation: animateCloud 45s linear infinite;
 	-moz-animation: animateCloud 45s linear infinite;
 	animation: animateCloud 45s linear infinite;
-	
-	/* -webkit-transform: scale(0.65);
-	-moz-transform: scale(0.65);
-	transform: scale(0.65); */
 }
 
 .x2 {
 	-webkit-animation: animateCloud 90s linear infinite;
 	-moz-animation: animateCloud 90s linear infinite;
 	animation: animateCloud 90s linear infinite;
-/* 	
-	-webkit-transform: scale(0.3);
-	-moz-transform: scale(0.3);
-	transform: scale(0.3); */
 }
 
 .x3 {
 	-webkit-animation: animateCloud 70s linear infinite;
 	-moz-animation: animateCloud 70s linear infinite;
 	animation: animateCloud 70s linear infinite;
-	
-	/* -webkit-transform: scale(0.5);
-	-moz-transform: scale(0.5);
-	transform: scale(0.5); */
 }
 
 .x4 {
 	-webkit-animation: animateCloud 55s linear infinite;
 	-moz-animation: animateCloud 55s linear infinite;
 	animation: animateCloud 55s linear infinite;
-	
-	/* -webkit-transform: scale(0.4);
-	-moz-transform: scale(0.4);
-	transform: scale(0.4); */
 }
 
 @font-face {
@@ -120,9 +109,67 @@ body {
     font-size: 72px;
     font-weight: bolder;
     color: rgb(255, 145, 0);
+    text-shadow: rgb(20, 12, 0) 2px 2px 0px;
 }
 
 h1 {
     font-weight: bolder;
     text-shadow: 1px -1px 0 #000,
+}
+
+.button {
+    font-family: 'Stardew Valley';
+    background: linear-gradient(to bottom, #ebb26d, #f8c97b, #ebb26d);
+    font-size: 32px; /* Increase font size */
+    color: #8f6c42;
+    padding: 15px 30px; /* Increase padding */
+    border-radius: 10px; /* Increase border radius */
+    border: 6px solid #c0945e; /* Increase border thickness */
+    border-style: ridge;
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+
+}
+
+.button:active {
+    background: linear-gradient(to bottom, #f8c97b, #ebb26d, #f8c97b);
+}
+
+.form-group {
+    color: #8f6c42;
+    background: linear-gradient(to bottom, #ebb26d, #f8c97b, #ebb26d);
+    border: 6px solid #c0945e;
+    border-style: ridge;
+    padding: 20px;
+    font-family: 'Stardew Valley';
+    font-size: 48px;
+}
+
+.form-control {
+    font-size: 24px;
+    font-family:monospace;
+    padding-top: 2px;
+    padding-bottom: 2px;
+}
+
+#reason-div {
+    border-radius: 10px 10px 0px 0px;
+}
+
+#passphrase-div {
+    border-top: none;
+    border-bottom:none;
+}
+
+#duration-div {
+    border-radius: 0px 0px 10px 10px;
+}
+
+#duration {
+    font-size: 20px;
+    font-family:monospace;
+    padding-top: 2px;
+    padding-bottom: 2px;
 }

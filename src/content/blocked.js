@@ -1,12 +1,13 @@
 import { hashString, getFromStorage } from '../utils/utils.js';
 document.addEventListener('DOMContentLoaded', () => {
-  const unblockRequestForm = document.getElementById('unblockRequestForm');
-  const unblockButton = document.getElementById('unblockButton');
+  const unblockRequestForm = document.getElementById('unblock-request-form');
+  const unblockButton = document.getElementById('unblock-button');
 
   const clouds = document.querySelectorAll('.cloud');
   clouds.forEach(cloud => {
       // make sure that the cloud is from 0 to 40% from the top
       cloud.style.top = `${Math.random() * 30}%`;
+      cloud.style.animationDelay = `${Math.random() * 40}s`; // Random animation delay between 0s and 10s, and 0s for fadeIn
     });
 
   // Description: This script is injected into the blocked page to handle the unblock request form
@@ -26,6 +27,16 @@ document.addEventListener('DOMContentLoaded', () => {
       const reason = document.getElementById('reason').value;
       const duration = document.getElementById('duration').value;
       const passphrase = document.getElementById('passphrase').value;
+      if (!passphrase && !reason) {
+          alert('Please enter your passphrase and reason!');
+          return;
+      } else if (!passphrase) {
+          alert('Please enter your passphrase!');
+          return;
+      } else if (!reason) {
+          alert('Please enter a reason!');
+          return;
+      }
       // Hash the passphrase
       hashString(passphrase).then(hashedPassphrase => {
           // Send a message to the background script to unblock the site
@@ -60,12 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
   });
 
-  // Add an event listener to the unblock button to show the unblock request form
+  // Add an event listener to the unblock button to toggle the unblock request form
   unblockButton.addEventListener('click', function() {
-      //set the visibility of the form to visible
-      unblockRequestForm.style.visibility = 'visible';
-      //set the visibility of the button to hidden
-      unblockButton.style.display = 'none';
-  }
-  );
+    if (unblockRequestForm.style.visibility === 'visible') {
+        unblockRequestForm.style.visibility = 'hidden';
+        unblockButton.innerText = 'Like to unblock?';
+    } else {
+        unblockRequestForm.style.visibility = 'visible';
+        // unblockButton.innerText = 'Submit request';
+        unblockButton.style.visibility = 'hidden';
+    }
+  });
 });
