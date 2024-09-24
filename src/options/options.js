@@ -49,14 +49,14 @@ document.addEventListener('DOMContentLoaded', () => {
             toggleButton.setAttribute('aria-expanded', 'false');
             toggleButton.setAttribute('aria-controls', `collapse-${index}`);
             toggleButton.innerHTML = '<i class="bi bi-chevron-right"></i>'; // Sideways triangle icon
-        
+                    
             // Add event listener to toggle the icon
             toggleButton.addEventListener('click', function() {
                 const icon = this.querySelector('i');
                 icon.classList.toggle('bi-chevron-right');
                 icon.classList.toggle('bi-chevron-down'); // Downwards triangle icon
             });
-        
+
             accordionHeader.appendChild(toggleButton);
         
             const accordionButton = document.createElement('button');
@@ -67,6 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
             accordionButton.setAttribute('aria-expanded', 'false');
             accordionButton.setAttribute('aria-controls', `collapse-${index}`);
             accordionButton.innerHTML = `${rule}`;
+
+            // Add event listener to toggle the icon
+            accordionButton.addEventListener('click', function() {
+                const icon = toggleButton.querySelector('i');
+                icon.classList.toggle('bi-chevron-right');
+                icon.classList.toggle('bi-chevron-down'); // Downwards triangle icon
+            });
         
             accordionHeader.appendChild(accordionButton);
         
@@ -82,6 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             accordionHeader.appendChild(removeButton);
             accordionItem.appendChild(accordionHeader);
         
+            // Create the collapse element
             const accordionCollapse = document.createElement('div');
             accordionCollapse.id = `collapse-${index}`;
             accordionCollapse.classList.add('collapse');
@@ -106,7 +114,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
             const reasonsList = document.createElement('ul');
             reasonsList.classList.add('list-group', 'reasons-list');
-                          
+            
+            // Add each reason as a list item
             (reasons[rule] || []).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
@@ -117,7 +126,6 @@ document.addEventListener('DOMContentLoaded', () => {
             accordionBody.appendChild(reasonsList);
             accordionCollapse.appendChild(accordionBody);
             accordionItem.appendChild(accordionCollapse);
-        
             accordionContainer.appendChild(accordionItem);
         });
         
