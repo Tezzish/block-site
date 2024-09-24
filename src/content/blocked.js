@@ -3,6 +3,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const unblockRequestForm = document.getElementById('unblockRequestForm');
   const unblockButton = document.getElementById('unblockButton');
 
+  const clouds = document.querySelectorAll('.cloud');
+  clouds.forEach(cloud => {
+      // make sure that the cloud is from 0 to 40% from the top
+      cloud.style.top = `${Math.random() * 30}%`;
+    });
+
   // Description: This script is injected into the blocked page to handle the unblock request form
   unblockRequestForm.addEventListener('submit', function(event) {
       event.preventDefault();
@@ -62,14 +68,4 @@ document.addEventListener('DOMContentLoaded', () => {
       unblockButton.style.display = 'none';
   }
   );
-
-  // listen to responses from the background script
-  browser.runtime.onMessage.addListener((message, sender) => {
-      if (message.action === 'showUnblockForm') {
-          //set the visibility of the form to visible
-          unblockRequestForm.style.visibility = 'visible';
-          //set the visibility of the button to hidden
-          unblockButton.style.display = 'none';
-      }
-  });
 });
