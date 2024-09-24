@@ -2,6 +2,7 @@ import { hashString, getFromStorage } from '../utils/utils.js';
 document.addEventListener('DOMContentLoaded', () => {
   const unblockRequestForm = document.getElementById('unblock-request-form');
   const unblockButton = document.getElementById('unblock-button');
+  const optionsLink = document.getElementById('options-link');
 
   const clouds = document.querySelectorAll('.cloud');
   clouds.forEach(cloud => {
@@ -81,5 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // unblockButton.innerText = 'Submit request';
         unblockButton.style.visibility = 'hidden';
     }
+  });
+
+  optionsLink.addEventListener('click', function(event) {
+    event.preventDefault();
+    browser.runtime.openOptionsPage();
   });
 });
