@@ -23,85 +23,74 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Populate the accordion with unblock rules
-
     async function populateAccordion() {
         const rules = await fetchUnblockRules();
         const reasons = await fetchReasons();
         accordionContainer.innerHTML = ''; // Clear existing items
-    
+
         if (rules.length === 0) {
             accordionContainer.innerHTML = '<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" disabled>No rules found</button></h2></div>';
             return;
         }
-    
-        rules.forEach((rule, index) => {
+
+        rules.forEach(([pattern, date], index) => {
+              // create a new accordion item
             const accordionItem = document.createElement('div');
-            accordionItem.classList.add('card');
-        
-            const accordionHeader = document.createElement('div');
-            accordionHeader.classList.add('card-header', 'd-flex', 'align-items-center'); // Make the header a flex container
-        
-            // Create the toggle button with a triangle icon
-            const toggleButton = document.createElement('button');
-            toggleButton.classList.add('btn', 'btn-link', 'p-0', 'mr-2');
-            toggleButton.setAttribute('data-toggle', 'collapse');
-            toggleButton.setAttribute('data-target', `#collapse-${index}`);
-            toggleButton.setAttribute('aria-expanded', 'false');
-            toggleButton.setAttribute('aria-controls', `collapse-${index}`);
-            toggleButton.innerHTML = '<i class="bi bi-chevron-right"></i>'; // Sideways triangle icon
-                    
-            // Add event listener to toggle the icon
-            toggleButton.addEventListener('click', function() {
-                const icon = this.querySelector('i');
-                icon.classList.toggle('bi-chevron-right');
-                icon.classList.toggle('bi-chevron-down'); // Downwards triangle icon
-            });
+            accordionItem.classList.add('accordion-item');
 
-            accordionHeader.appendChild(toggleButton);
-        
+            // Create the header
+            const accordionHeader = document.createElement('h2');
+            accordionHeader.classList.add('accordion-header');
+
+            // Create the button wrapper
+            const accordionButtonWrapper = document.createElement('div');
+            accordionButtonWrapper.classList.add('d-flex', 'justify-content-between', 'align-items-center');
+            accordionButtonWrapper.id = `heading${index}`;
+
+            // Create the button
             const accordionButton = document.createElement('button');
-            accordionButton.classList.add('btn', 'btn-link', 'collapsed', 'flex-grow-1', 'text-left'); // Make the button take up available space and align text to the left
-            accordionButton.type = 'button';
-            accordionButton.setAttribute('data-toggle', 'collapse');
-            accordionButton.setAttribute('data-target', `#collapse-${index}`);
+            accordionButton.classList.add('accordion-button', 'collapsed', 'chevron-right', 'flex-grow-1', 'text-start');
+            accordionButton.setAttribute('type', 'button');
+            accordionButton.setAttribute('data-bs-toggle', 'collapse');
+            accordionButton.setAttribute('data-bs-target', `#collapse${index}`);
             accordionButton.setAttribute('aria-expanded', 'false');
-            accordionButton.setAttribute('aria-controls', `collapse-${index}`);
-            accordionButton.innerHTML = `${rule}`;
+            accordionButton.setAttribute('aria-controls', `collapse${index}`);
+            accordionButton.textContent = pattern;
 
-            // Add event listener to toggle the icon
-            accordionButton.addEventListener('click', function() {
-                const icon = toggleButton.querySelector('i');
-                icon.classList.toggle('bi-chevron-right');
-                icon.classList.toggle('bi-chevron-down'); // Downwards triangle icon
-            });
-        
-            accordionHeader.appendChild(accordionButton);
-        
             // Create the remove button
             const removeButton = document.createElement('button');
-            removeButton.classList.add('btn', 'btn-danger', 'btn-sm', 'ml-auto', 'remove-rule-btn');
+            removeButton.classList.add('btn', 'btn-danger', 'remove-rule-btn', 'ms-3');
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
-            removeButton.addEventListener('click', function(event) {
-                event.stopPropagation(); // Prevent the accordion from toggling when clicking the remove button
-                sendPermUnblockMessage(rule);
-            });
-        
-            accordionHeader.appendChild(removeButton);
+            removeButton.setAttribute('data-pattern', pattern);
+
+            // Append the remove button and text to the button wrapper
+            accordionButtonWrapper.appendChild(accordionButton);
+            accordionButtonWrapper.appendChild(removeButton);
+
+            // Append the button wrapper to the header
+            accordionHeader.appendChild(accordionButtonWrapper);
+
+            // Append the header to the accordion item
             accordionItem.appendChild(accordionHeader);
-        
-            // Create the collapse element
+
+            // Create the collapse div
             const accordionCollapse = document.createElement('div');
-            accordionCollapse.id = `collapse-${index}`;
-            accordionCollapse.classList.add('collapse');
-            accordionCollapse.setAttribute('aria-labelledby', `heading-${index}`);
-            accordionCollapse.setAttribute('data-parent', '#unblock-rules-accordion');
-        
+            accordionCollapse.classList.add('accordion-collapse', 'collapse');
+            accordionCollapse.setAttribute('id', `collapse${index}`);
+
+            // Create the body
             const accordionBody = document.createElement('div');
-            accordionBody.classList.add('card-body');
-        
-            // Add the <p> element before the list of reasons
+            accordionBody.classList.add('accordion-body');
+            accordionCollapse.appendChild(accordionBody);
+
+            // Append the collapse div to the accordion item
+            accordionItem.appendChild(accordionCollapse);
+
+            // Append the accordion item to the container
+            accordionContainer.appendChild(accordionItem);
+
             const reasonsParagraph = document.createElement('p');
-            if (!reasons[rule] || reasons[rule].length === 0) {
+            if (!reasons[pattern] || reasons[pattern].length === 0) {
                 reasonsParagraph.textContent = 'No reasons for temporary unblocks provided.';
                 accordionBody.appendChild(reasonsParagraph);
                 accordionCollapse.appendChild(accordionBody);
@@ -116,10 +105,10 @@ document.addEventListener('DOMContentLoaded', () => {
             reasonsList.classList.add('list-group', 'reasons-list');
             
             // Add each reason as a list item
-            (reasons[rule] || []).forEach(reason => {
+            (reasons[pattern] || []).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
-                reasonItem.textContent = '\t' + reason[0] + ' (' + reason[1] + ' minutes)';
+                reasonItem.textContent = reason[0] + ' (' + reason[1] + ' minutes)';
                 reasonsList.appendChild(reasonItem);
             });
         
@@ -132,12 +121,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add event listeners for remove buttons
         document.querySelectorAll('.remove-rule-btn').forEach(button => {
             button.addEventListener('click', function(event) {
-                const rule = event.target.closest('.btn-link').textContent.trim();
-                sendPermUnblock(rule);
+                event.preventDefault();
+                const buttonPattern = button.getAttribute('data-pattern');
+                console.log('Removing rule:', buttonPattern);
+                sendPermUnblockMessage(buttonPattern);
             });
         });
     }
-    
+    // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
         event.preventDefault();
         const password = passwordInput.value;
@@ -155,9 +146,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function sendPermUnblockMessage(pattern) {
-        const storedPassphrase = await getFromStorage('Passphrase');
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
-
+        if (!inputPassphrase) {
+            return;
+        }
         hashString(inputPassphrase).then(hashedPassphrase => {
             browser.runtime.sendMessage({
                 action: 'permUnblock',

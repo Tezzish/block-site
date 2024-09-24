@@ -29,7 +29,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (result.blockedSites.includes(pattern)) {
             return;
           }
-          const updatedBlockedSites = [...result.blockedSites, pattern];
+          // add current time and pattern to blockedSites
+          const updatedBlockedSites = [...result.blockedSites, [pattern, Date.now()]];
           // Save the updated list of blocked sites
           browser.storage.local.set({blockedSites: updatedBlockedSites});
           // reload the current page
@@ -44,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Open the options page in a new tab when the link is clicked
     optionsLink.addEventListener('click', function(event) {
         event.preventDefault();
-        console.log("here");
         browser.runtime.openOptionsPage();
   });
 });

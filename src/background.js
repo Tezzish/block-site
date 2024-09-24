@@ -30,7 +30,8 @@ async function isBlocked(url) {
   const blockedSites = await getFromStorage('blockedSites', []);
   const hostname = new URL(url).hostname;
 
-  return blockedSites.some(pattern => {
+  return blockedSites.some(patternDate => {
+    const pattern = patternDate[0];
     const patternDomain = pattern.replace(/^\*:\/\/\*\./, '').replace(/\/\*$/, '');
     return hostname === patternDomain || hostname.endsWith(`.${patternDomain}`);
   });
@@ -141,12 +142,15 @@ async function addToTempUnblockedReasons(url, reason, duration) {
 async function handlePermUnblock(message, sender) {
   try {
     const storedPassphrase = await getFromStorage("Passphrase");
+    console.log(message.pattern);
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
 
     const pattern = message.pattern;
-    const blockedUrl = await getFromStorage('blockedSites', []).then(sites => sites.find(site => site === pattern));
+    const blockedUrl = await getFromStorage('blockedSites', []).then(blockedSites => {
+      return blockedSites.find(site => site[0] === pattern);
+    });
     if (!blockedUrl) {
       return { status: "error", message: "Blocked URL not found" };
     }
@@ -167,7 +171,7 @@ async function handlePermUnblock(message, sender) {
  */
 async function removeFromBlockedSites(pattern) {
   const blockedSites = await getFromStorage('blockedSites', []);
-  const newBlockedSites = blockedSites.filter(site => site !== pattern);
+  const newBlockedSites = blockedSites.filter(site => site[0] !== pattern);
   await setInStorage('blockedSites', newBlockedSites);
 }
 
