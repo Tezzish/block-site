@@ -9,12 +9,12 @@ export async function hashString(message) {
 }
 
 // Utility function to get data from local storage
-export function getFromStorage(key, defaultValue) {
+export async function getFromStorage(key, defaultValue) {
     return browser.storage.local.get({ [key]: defaultValue }).then(result => result[key]);
 }
 
 // Utility function to set data in local storage
-export function setInStorage(key, value) {
+export async function setInStorage(key, value) {
     return browser.storage.local.set({ [key]: value });
 }
 

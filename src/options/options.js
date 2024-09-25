@@ -5,27 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordForm = document.getElementById('password-form');
     const passwordInput = document.getElementById('password');
 
-    // Fetch unblock rules from storage
-    async function fetchUnblockRules() {
-        const blockedSites = await getFromStorage('blockedSites');
-        if (!blockedSites) {
-            return [];
-        }
-        return blockedSites;
-    }
-
-    async function fetchReasons() {
-        const reasons = await getFromStorage('tempUnblockReasons');
-        if (!reasons) {
-            return {};
-        }
-        return reasons;
-    }
-
     // Populate the accordion with unblock rules
     async function populateAccordion() {
-        const rules = await fetchUnblockRules();
-        const reasons = await fetchReasons();
+        const blockedSites = await getFromStorage('blockedSites', new Map());
+        const rules = Array.from(blockedSites.keys());
+        const reasons = await getFromStorage('tempUnblockReasons', new Map());
         accordionContainer.innerHTML = ''; // Clear existing items
 
         if (rules.length === 0) {
@@ -33,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        rules.forEach(([pattern, date], index) => {
+        rules.forEach((pattern, index) => {
               // create a new accordion item
             const accordionItem = document.createElement('div');
             accordionItem.classList.add('accordion-item');
@@ -90,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             accordionContainer.appendChild(accordionItem);
 
             const reasonsParagraph = document.createElement('p');
-            if (!reasons[pattern] || reasons[pattern].length === 0) {
+            if (!reasons.get(pattern) || reasons.get(pattern).length === 0) {
                 reasonsParagraph.textContent = 'No reasons for temporary unblocks provided.';
                 accordionBody.appendChild(reasonsParagraph);
                 accordionCollapse.appendChild(accordionBody);
@@ -105,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reasonsList.classList.add('list-group', 'reasons-list');
             
             // Add each reason as a list item
-            (reasons[pattern] || []).forEach(reason => {
+            (reasons.get(pattern)).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
                 reasonItem.textContent = reason[0] + ' (' + reason[1] + ' minutes)';
@@ -167,6 +151,65 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error in hashing password:', error);
         });
     }
-    // Initial population of the accordion
+
+    async function serialiseBlockedSites() {
+        try {
+            const blockedSites = await getFromStorage('blockedSites', new Map());
+            if (blockedSites.size === 0) {
+                alert('No rules found');
+                return;
+            }
+            const json = JSON.stringify(Array.from(blockedSites.entries()));
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+    
+            browser.downloads.download({
+                url: url,
+                filename: 'blocked.sites',
+                saveAs: true
+            }).then(() => {
+                URL.revokeObjectURL(url);
+            }).catch((error) => {
+                console.error(`Download failed: ${error}`);
+            });
+            alert('Blocked sites exported successfully');
+        } catch (error) {
+          console.error("Error in serialiseBlockedSites:", error);
+          alert('An error occurred while exporting blocked sites');
+        }
+    }
+    
+    async function deserialiseBlockedSites() {
+        const selectedFile = document.getElementById("file-input").files[0];
+        if (!selectedFile) {
+            alert('Please select a file');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (!Array.isArray(data)) {
+                    throw new Error("Invalid data format");
+                }
+                const blockedSites = new Map(data);
+                await setInStorage('blockedSites', blockedSites);
+                alert('Blocked sites imported successfully');
+                // reload the accordion
+                populateAccordion();
+            } catch (error) {
+                console.error("Error in deserialiseBlockedSites:", error);
+                alert('An error occurred while importing blocked sites');
+            }
+        };
+        reader.readAsText(selectedFile);
+    }
+
+    const exportButton = document.getElementById('export-button');
+    const importButton = document.getElementById('import-button');
+    const fileInput = document.getElementById('file-input');
+    exportButton.addEventListener('click', serialiseBlockedSites);
+    importButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', deserialiseBlockedSites);
     populateAccordion();
 });
