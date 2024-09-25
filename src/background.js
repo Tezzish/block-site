@@ -11,8 +11,8 @@ import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
  */
 async function isTemporarilyUnblocked(url) {
   const pattern = processUrl(url);
-  const tempUnblocks = await getFromStorage('tempUnblocks', {});
-  const expiryTime = tempUnblocks[pattern];
+  const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+  const expiryTime = tempUnblocks.get(pattern);
   return expiryTime && expiryTime > Date.now();
 }
 
@@ -27,14 +27,9 @@ async function isBlocked(url) {
   if (isUnblocked) {
     return false;
   }
-  const blockedSites = await getFromStorage('blockedSites', []);
-  const hostname = new URL(url).hostname;
-
-  return blockedSites.some(patternDate => {
-    const pattern = patternDate[0];
-    const patternDomain = pattern.replace(/^\*:\/\/\*\./, '').replace(/\/\*$/, '');
-    return hostname === patternDomain || hostname.endsWith(`.${patternDomain}`);
-  });
+  const blockedSites = await getFromStorage('blockedSites', new Map());
+  const pattern = processUrl(url);
+  return blockedSites.has(pattern);
 }
 
 /**
@@ -42,7 +37,7 @@ async function isBlocked(url) {
  *
  * @param {string} url - The URL of the current tab.
  */
-function redirectIfBlocked(url) {
+async function redirectIfBlocked(url) {
   isBlocked(url).then(isBlocked => {
     if (isBlocked) {
       const encodedUrl = encodeURIComponent(url);
@@ -100,8 +95,8 @@ async function handleTempUnblock(message, sender) {
 async function addToTempUnblocked(url, duration) {
   try {
     const expiryTime = Date.now() + duration * 60 * 1000;
-    const tempUnblocks = await getFromStorage('tempUnblocks', {});
-    tempUnblocks[url] = expiryTime;
+    const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+    tempUnblocks.set(url, expiryTime);
     await setInStorage('tempUnblocks', tempUnblocks);
     await browser.alarms.create(url, { when: expiryTime });
   } catch (error) {
@@ -119,10 +114,10 @@ async function addToTempUnblocked(url, duration) {
 async function addToTempUnblockedReasons(url, reason, duration) {
   try {
     const tuple = [reason, duration];
-    const tempUnblockReasons = await getFromStorage('tempUnblockReasons', {});
-    const reasons = tempUnblockReasons[url] || [];
+    const tempUnblockReasons = await getFromStorage('tempUnblockReasons', new Map());
+    const reasons = tempUnblockReasons.get(url) || [];
     reasons.push(tuple);
-    tempUnblockReasons[url] = reasons;
+    tempUnblockReasons.set(url, reasons);
     await setInStorage('tempUnblockReasons', tempUnblockReasons);
   } catch (error) {
     console.error("Error in addToTempUnblockedReasons:", error);
@@ -142,20 +137,18 @@ async function addToTempUnblockedReasons(url, reason, duration) {
 async function handlePermUnblock(message, sender) {
   try {
     const storedPassphrase = await getFromStorage("Passphrase");
-    console.log(message.pattern);
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
 
     const pattern = message.pattern;
-    const blockedUrl = await getFromStorage('blockedSites', []).then(blockedSites => {
-      return blockedSites.find(site => site[0] === pattern);
-    });
-    if (!blockedUrl) {
-      return { status: "error", message: "Blocked URL not found" };
-    }
 
-    await removeFromBlockedSites(pattern);
+    try {
+      await removeFromBlockedSites(pattern);
+    } catch (error) {
+      console.error("Error in handlePermUnblock:", error);
+      return { status: "error", message: "An error occurred while processing the unblock", error };
+    }
 
     return { status: "success", message: "Site unblocked" };
   } catch (error) {
@@ -170,9 +163,13 @@ async function handlePermUnblock(message, sender) {
  * @param {string} pattern - The URL pattern to remove.
  */
 async function removeFromBlockedSites(pattern) {
-  const blockedSites = await getFromStorage('blockedSites', []);
-  const newBlockedSites = blockedSites.filter(site => site[0] !== pattern);
-  await setInStorage('blockedSites', newBlockedSites);
+  const blockedSites = await getFromStorage('blockedSites', new Map());
+  if (blockedSites.has(pattern)) {
+    const newBlockedSites = blockedSites.delete(pattern);
+    await setInStorage('blockedSites', newBlockedSites);
+  } else {
+    console.error("Pattern not found in blocked sites:", pattern);
+  }
 }
 
 // Alarm Handling
@@ -186,10 +183,10 @@ async function removeFromBlockedSites(pattern) {
 function handleAlarm(alarm) {
   const pattern = alarm.name;
 
-  getFromStorage('tempUnblocks', {})
+  getFromStorage('tempUnblocks', new Map())
     .then(tempUnblocks => {
-      if (tempUnblocks[pattern]) {
-        delete tempUnblocks[pattern];
+      if (tempUnblocks.has(pattern)) {  
+        tempUnblocks.delete(pattern);
         return setInStorage('tempUnblocks', tempUnblocks);
       }
     })

@@ -1,31 +1,63 @@
 import { hashString, getFromStorage, setInStorage } from '../utils/utils.js';
 
+async function serialiseBlockedSites() {
+    try {
+      const blockedSites = await getFromStorage(blockedSites, new Map());
+      // create a json object and write to file
+      const json = JSON.stringify(blockedSites);
+      const jsonHandle = await window.showSaveFilePicker({
+        suggestedName: 'exported.block',
+        types: [{
+          description: 'Blocked Sites',
+          accept: {
+            'application/json': ['.block']
+          }
+        }]
+      });
+
+      const writable = await jsonHandle.createWritable();
+      await writable.write(json);
+      await writable.close();
+  
+      alert('Blocked sites exported successfully');
+    } catch (error) {
+      console.error("Error in serialiseBlockedSites:", error);
+      alert('An error occurred while exporting blocked sites');
+    }
+}
+  
+async function deserialiseBlockedSites() {
+try {
+    const fileHandle = await window.showOpenFilePicker({
+    types: [{
+        description: 'Blocked Sites',
+        accept: {
+        'application/json': ['.block']
+        }
+    }]
+    });
+    const file = await fileHandle.getFile();
+    const json = await file.text();
+    const blockedSites = JSON.parse(json);
+    await setInStorage('blockedSites', blockedSites);
+    alert('Blocked sites imported successfully');
+} catch (error) {
+    console.error("Error in deserialiseBlockedSites:", error);
+    alert('An error occurred while importing blocked sites');
+}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const accordionContainer = document.querySelector('#unblock-rules-accordion');
     const passwordForm = document.getElementById('password-form');
     const passwordInput = document.getElementById('password');
 
-    // Fetch unblock rules from storage
-    async function fetchUnblockRules() {
-        const blockedSites = await getFromStorage('blockedSites');
-        if (!blockedSites) {
-            return [];
-        }
-        return blockedSites;
-    }
-
-    async function fetchReasons() {
-        const reasons = await getFromStorage('tempUnblockReasons');
-        if (!reasons) {
-            return {};
-        }
-        return reasons;
-    }
-
     // Populate the accordion with unblock rules
     async function populateAccordion() {
-        const rules = await fetchUnblockRules();
-        const reasons = await fetchReasons();
+        const blockedSites = await getFromStorage('blockedSites', new Map());
+        console.log(blockedSites);
+        const rules = Array.from(blockedSites.keys());
+        const reasons = await getFromStorage('tempUnblockReasons', {});
         accordionContainer.innerHTML = ''; // Clear existing items
 
         if (rules.length === 0) {
@@ -33,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        rules.forEach(([pattern, date], index) => {
+        rules.forEach((pattern, index) => {
               // create a new accordion item
             const accordionItem = document.createElement('div');
             accordionItem.classList.add('accordion-item');
@@ -167,6 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error in hashing password:', error);
         });
     }
+
+    const exportButton = document.getElementById('export-button');
+    exportButton.addEventListener('click', serialiseBlockedSites);
     // Initial population of the accordion
     populateAccordion();
 });
