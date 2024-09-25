@@ -164,9 +164,8 @@ async function handlePermUnblock(message, sender) {
  */
 async function removeFromBlockedSites(pattern) {
   const blockedSites = await getFromStorage('blockedSites', new Map());
-  if (blockedSites.has(pattern)) {
-    const newBlockedSites = blockedSites.delete(pattern);
-    await setInStorage('blockedSites', newBlockedSites);
+  if (blockedSites.delete(pattern)) {
+    await setInStorage('blockedSites', blockedSites);
   } else {
     console.error("Pattern not found in blocked sites:", pattern);
   }

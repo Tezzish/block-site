@@ -1,32 +1,5 @@
 import { hashString, getFromStorage, setInStorage } from '../utils/utils.js';
 
-async function serialiseBlockedSites() {
-    try {
-        const blockedSites = await getFromStorage('blockedSites', new Map());
-        if (blockedSites.size === 0) {
-            alert('No rules found');
-            return;
-        }
-        const json = JSON.stringify(JSON.stringify(Array.from(blockedSites.entries())));
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-
-        browser.downloads.download({
-            url: url,
-            filename: 'blocked.sites',
-            saveAs: true
-        }).then(() => {
-            URL.revokeObjectURL(url);
-        }).catch((error) => {
-            console.error(`Download failed: ${error}`);
-        });
-        alert('Blocked sites exported successfully');
-    } catch (error) {
-      console.error("Error in serialiseBlockedSites:", error);
-      alert('An error occurred while exporting blocked sites');
-    }
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     const accordionContainer = document.querySelector('#unblock-rules-accordion');
     const passwordForm = document.getElementById('password-form');
@@ -179,10 +152,64 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function serialiseBlockedSites() {
+        try {
+            const blockedSites = await getFromStorage('blockedSites', new Map());
+            if (blockedSites.size === 0) {
+                alert('No rules found');
+                return;
+            }
+            const json = JSON.stringify(Array.from(blockedSites.entries()));
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+    
+            browser.downloads.download({
+                url: url,
+                filename: 'blocked.sites',
+                saveAs: true
+            }).then(() => {
+                URL.revokeObjectURL(url);
+            }).catch((error) => {
+                console.error(`Download failed: ${error}`);
+            });
+            alert('Blocked sites exported successfully');
+        } catch (error) {
+          console.error("Error in serialiseBlockedSites:", error);
+          alert('An error occurred while exporting blocked sites');
+        }
+    }
+    
+    async function deserialiseBlockedSites() {
+        const selectedFile = document.getElementById("file-input").files[0];
+        if (!selectedFile) {
+            alert('Please select a file');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            try {
+                const data = JSON.parse(event.target.result);
+                if (!Array.isArray(data)) {
+                    throw new Error("Invalid data format");
+                }
+                const blockedSites = new Map(data);
+                await setInStorage('blockedSites', blockedSites);
+                alert('Blocked sites imported successfully');
+                // reload the accordion
+                populateAccordion();
+            } catch (error) {
+                console.error("Error in deserialiseBlockedSites:", error);
+                alert('An error occurred while importing blocked sites');
+            }
+        };
+        reader.readAsText(selectedFile);
+    }
+
     const exportButton = document.getElementById('export-button');
+    const importButton = document.getElementById('import-button');
+    const fileInput = document.getElementById('file-input');
     exportButton.addEventListener('click', serialiseBlockedSites);
-    // const importButton = document.getElementById('import-button');
-    // importButton.addEventListener('click', deserialiseBlockedSites);
-    // Initial population of the accordion
+    importButton.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', deserialiseBlockedSites);
     populateAccordion();
 });
