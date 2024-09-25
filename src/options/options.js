@@ -2,49 +2,29 @@ import { hashString, getFromStorage, setInStorage } from '../utils/utils.js';
 
 async function serialiseBlockedSites() {
     try {
-      const blockedSites = await getFromStorage(blockedSites, new Map());
-      // create a json object and write to file
-      const json = JSON.stringify(blockedSites);
-      const jsonHandle = await window.showSaveFilePicker({
-        suggestedName: 'exported.block',
-        types: [{
-          description: 'Blocked Sites',
-          accept: {
-            'application/json': ['.block']
-          }
-        }]
-      });
+        const blockedSites = await getFromStorage('blockedSites', new Map());
+        if (blockedSites.size === 0) {
+            alert('No rules found');
+            return;
+        }
+        const json = JSON.stringify(JSON.stringify(Array.from(blockedSites.entries())));
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
 
-      const writable = await jsonHandle.createWritable();
-      await writable.write(json);
-      await writable.close();
-  
-      alert('Blocked sites exported successfully');
+        browser.downloads.download({
+            url: url,
+            filename: 'blocked.sites',
+            saveAs: true
+        }).then(() => {
+            URL.revokeObjectURL(url);
+        }).catch((error) => {
+            console.error(`Download failed: ${error}`);
+        });
+        alert('Blocked sites exported successfully');
     } catch (error) {
       console.error("Error in serialiseBlockedSites:", error);
       alert('An error occurred while exporting blocked sites');
     }
-}
-  
-async function deserialiseBlockedSites() {
-try {
-    const fileHandle = await window.showOpenFilePicker({
-    types: [{
-        description: 'Blocked Sites',
-        accept: {
-        'application/json': ['.block']
-        }
-    }]
-    });
-    const file = await fileHandle.getFile();
-    const json = await file.text();
-    const blockedSites = JSON.parse(json);
-    await setInStorage('blockedSites', blockedSites);
-    alert('Blocked sites imported successfully');
-} catch (error) {
-    console.error("Error in deserialiseBlockedSites:", error);
-    alert('An error occurred while importing blocked sites');
-}
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -55,9 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Populate the accordion with unblock rules
     async function populateAccordion() {
         const blockedSites = await getFromStorage('blockedSites', new Map());
-        console.log(blockedSites);
         const rules = Array.from(blockedSites.keys());
-        const reasons = await getFromStorage('tempUnblockReasons', {});
+        const reasons = await getFromStorage('tempUnblockReasons', new Map());
         accordionContainer.innerHTML = ''; // Clear existing items
 
         if (rules.length === 0) {
@@ -122,7 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
             accordionContainer.appendChild(accordionItem);
 
             const reasonsParagraph = document.createElement('p');
-            if (!reasons[pattern] || reasons[pattern].length === 0) {
+            if (!reasons.get(pattern) || reasons.get(pattern).length === 0) {
                 reasonsParagraph.textContent = 'No reasons for temporary unblocks provided.';
                 accordionBody.appendChild(reasonsParagraph);
                 accordionCollapse.appendChild(accordionBody);
@@ -137,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             reasonsList.classList.add('list-group', 'reasons-list');
             
             // Add each reason as a list item
-            (reasons[pattern] || []).forEach(reason => {
+            (reasons.get(pattern)).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
                 reasonItem.textContent = reason[0] + ' (' + reason[1] + ' minutes)';
@@ -202,6 +181,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const exportButton = document.getElementById('export-button');
     exportButton.addEventListener('click', serialiseBlockedSites);
+    // const importButton = document.getElementById('import-button');
+    // importButton.addEventListener('click', deserialiseBlockedSites);
     // Initial population of the accordion
     populateAccordion();
 });
