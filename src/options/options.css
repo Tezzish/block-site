@@ -1,0 +1,18 @@
+body {
+    font: 100% Arial, Sans Serif;
+    color: white;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(to bottom, #0b0422, #0e0035, #260057, #3b0063) !important;
+    background-size: 100% 100%;
+}
+
+.accordion-header:active {
+    background-color: white;
+}
+
+.accordion-button:active {
+    background-color: white;
+}
