@@ -138,7 +138,7 @@ function populateStars() {
             (reasons.get(pattern)).forEach(reason => {
                 const reasonItem = document.createElement('li');
                 reasonItem.classList.add('list-group-item');
-                reasonItem.textContent = reason[0] + ' (' + reason[1] + ' minutes)';
+                reasonItem.textContent = reason[0] + ' (' + reason[1] + (reason[1] > 1 ? ' minutes)' : ' minute)');
                 reasonsList.appendChild(reasonItem);
             });
         
