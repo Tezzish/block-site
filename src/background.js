@@ -32,14 +32,24 @@ async function isBlocked(url) {
   return blockedSites.has(pattern);
 }
 
+async function isRedirect() {
+  const redirectUrl = await getFromStorage("redirectUrl");
+  return new URL(redirectUrl);
+}
+
 /**
  * Redirects the current tab to the blocked page if the site is blocked.
  *
  * @param {string} url - The URL of the current tab.
  */
 async function redirectIfBlocked(url) {
+  const redirectUrl = await isRedirect();
   isBlocked(url).then(isBlocked => {
     if (isBlocked) {
+      if (redirectUrl) {
+        browser.tabs.update({ url: redirectUrl.href });
+        return;
+      }
       const encodedUrl = encodeURIComponent(url);
       const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
       browser.tabs.update({ url: blockedPageUrl });
@@ -222,8 +232,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ status: "error", message: "An unexpected error occurred" });
       });
     return true;
-  }
-});
+  }});
 
 // Listener for alarm events
 browser.alarms.onAlarm.addListener(handleAlarm);

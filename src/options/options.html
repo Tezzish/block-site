@@ -24,13 +24,23 @@
         </div>
         <div id="footer">
             <div class="mt-4" id="set-password-div">
-                <h2 id="set-password-header">Set (new) password</h2>
+                <h2 class="field-header" id="set-password-header">Set (new) password</h2>
                 <form id="password-form">
                     <div class="form-group">
-                        <label for="password">Password:</label>
+                        <label for="password">New password:</label>
                         <input type="password" class="form-control" id="password" name="password" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Set password</button>
+                </form>
+            </div>
+            <div class="mt-4" id="redirect-url-div">
+                <h2 class="field-header" id="redirect-url-header">(Optional) Redirect to custom URL</h2>
+                <form id="redirect-url-form">
+                    <div class="form-group">
+                        <label for="URL:">Enter URL:</label>
+                        <input type="text" class="form-control" id="redirect-url" name="Redirect URL" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Set URL</button>
                 </form>
             </div>
             <div class="row">
