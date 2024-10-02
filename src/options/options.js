@@ -10,7 +10,7 @@ function populateStars() {
     // create the html elements
     const stars = document.createElement('div');
     stars.classList.add('stars');
-    stars.style.position = 'absolute';
+    stars.style.position = 'fixed';
     stars.style.width = '100%';
     stars.style.height = '35vh'; // Set height to 20% of the viewport height
     stars.style.top = '0';
