@@ -13,13 +13,54 @@ body {
     font-family: "Stardew Valley";
     src: url("../assets/fonts/Stardew_Valley.ttf") format("truetype");
 }
+ 
+h1 {
+    font-family: "Stardew Valley";
+    font-size: 4em;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    color: white;
+    font-weight: bold;
+}
 
-.accordion-header:active {
-    background-color: white;
+.accordion {
+    --bs-accordion-color: #bcdfff;
+    --bs-acoordion-bg: rgb(29, 0, 97);
+    --accordion-border-radius: var(--bs-accordion-border-radius, 0.25rem);
+    --accordion-icon-color: #bcdfff;
+    --accordion-icon-active-color: rgb(29, 0, 97);
+}
+
+.accordion-item {
+    border-color: var(--bs-accordion-color);
+}
+
+.accordion-button {
+    color: var(--bs-accordion-color);
+    background-color: var(--bs-acoordion-bg);
+    font-family: "Stardew Valley";
+    font-size: 1em;   
+}
+
+.accordion-button:not(.collapsed) {
+    border-radius: var(--accordion-border-radius);
 }
 
 .accordion-button:active {
-    background-color: white;
+    background-color: var(--bs-acoordion-bg);
+}
+
+.accordion-button::after {
+    fill:rgb(29, 0, 97);
+}
+
+.accordion-item {
+    background-color: var(--bs-acoordion-bg);
+}
+
+.remove-rule-btn {
+    margin-right: 16px;
 }
 
 @keyframes twinkle {

@@ -1,5 +1,4 @@
 body {
-    /* background: #00b4ff !important; */
     font: 100% Arial, Sans Serif;
     height: 100vh;
     margin: 0;
@@ -120,11 +119,11 @@ h1 {
 .button {
     font-family: 'Stardew Valley';
     background: linear-gradient(to bottom, #ebb26d, #f8c97b, #ebb26d);
-    font-size: 32px; /* Increase font size */
+    font-size: 32px;
     color: #8f6c42;
-    padding: 15px 30px; /* Increase padding */
-    border-radius: 10px; /* Increase border radius */
-    border: 6px solid #c0945e; /* Increase border thickness */
+    padding: 15px 30px;
+    border-radius: 10px;
+    border: 6px solid #c0945e;
     border-style: ridge;
     position: absolute;
     bottom: 100px;

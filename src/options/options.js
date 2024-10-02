@@ -218,7 +218,6 @@ function populateStars() {
             }).catch((error) => {
                 console.error(`Download failed: ${error}`);
             });
-            alert('Blocked sites exported successfully');
         } catch (error) {
           console.error("Error in serialiseBlockedSites:", error);
           alert('An error occurred while exporting blocked sites');
