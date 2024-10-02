@@ -12,23 +12,23 @@ function populateStars() {
     stars.classList.add('stars');
     stars.style.position = 'fixed';
     stars.style.width = '100%';
-    stars.style.height = '35vh'; // Set height to 20% of the viewport height
+    stars.style.height = '40vh';
     stars.style.top = '0';
     stars.style.left = '0';
-    stars.style.pointerEvents = 'none'; // Ensure it doesn't interfere with other elements
+    stars.style.pointerEvents = 'none';
   
     const star = document.createElement('div');
     star.classList.add('star');
     star.style.position = 'absolute';
   
-    star.style.backgroundColor = 'white'; // Set color of each star
-    star.style.borderRadius = '50%'; // Make each star circular
+    star.style.backgroundColor = 'white';
+    star.style.borderRadius = '50%';
   
     // add the stars to the page
     for (let i = 0; i < 150; i++) {
         const newStar = star.cloneNode();
         newStar.style.left = `${Math.random() * 100}%`;
-        newStar.style.top = `${Math.random() * 100}%`; // Use 100% since the parent is already 20vh
+        newStar.style.top = `${Math.random() * 100}%`;
         newStar.style.width = `${Math.random() * 2 + 1}px`;
         newStar.style.height = newStar.style.width;
         newStar.style.animationDuration = `${Math.random() * 2 + 1}s`;
