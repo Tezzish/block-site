@@ -33,8 +33,13 @@ async function isBlocked(url) {
 }
 
 async function isRedirect() {
-  const redirectUrl = await getFromStorage("redirectUrl");
-  return new URL(redirectUrl);
+  try {
+      const redirectUrl = await getFromStorage("redirectUrl");
+      return new URL(redirectUrl);
+  } catch (error) {
+      console.error("Error in isRedirect:", error);
+      return null;
+  }
 }
 
 /**

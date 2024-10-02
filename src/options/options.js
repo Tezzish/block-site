@@ -199,7 +199,13 @@ function populateStars() {
         } else {
             alert('Please enter a URL.');
         }
-    });    
+    });
+    const removeRedirectUrl = document.getElementById('remove-redirect-url');
+    removeRedirectUrl.addEventListener('click', async function(event) {
+        event.preventDefault();
+        await browser.storage.local.remove('redirectUrl');
+        alert('Redirect URL removed successfully!');
+    });
 
     async function sendPermUnblockMessage(pattern) {
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
