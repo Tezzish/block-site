@@ -3,12 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const unblockRequestForm = document.getElementById('unblock-request-form');
   const unblockButton = document.getElementById('unblock-button');
   const optionsLink = document.getElementById('options-link');
-
   const clouds = document.querySelectorAll('.cloud');
+  var i = 0;
   clouds.forEach(cloud => {
       // make sure that the cloud is from 0 to 40% from the top
-      cloud.style.top = `${Math.random() * 30}%`;
-      cloud.style.animationDelay = `${Math.random() * 40}s`; // Random animation delay between 0s and 10s, and 0s for fadeIn
+      console.log(i);
+      cloud.style.top = `${Math.random() * 20}%`;
+      cloud.style.animationDelay = `${i * 10}s`;
+      i++;
     });
 
   // Description: This script is injected into the blocked page to handle the unblock request form
@@ -89,3 +91,49 @@ document.addEventListener('DOMContentLoaded', () => {
     browser.runtime.openOptionsPage();
   });
 });
+
+// Function to add twinkling stars to the top 20% of the page
+function populateStars() {
+  // create the html elements
+  const stars = document.createElement('div');
+  stars.classList.add('stars');
+  stars.style.position = 'absolute';
+  stars.style.width = '100%';
+  stars.style.height = '20vh'; // Set height to 20% of the viewport height
+  stars.style.top = '0';
+  stars.style.left = '0';
+  stars.style.pointerEvents = 'none'; // Ensure it doesn't interfere with other elements
+
+  const star = document.createElement('div');
+  star.classList.add('star');
+  star.style.position = 'absolute';
+
+  star.style.backgroundColor = 'white'; // Set color of each star
+  star.style.borderRadius = '50%'; // Make each star circular
+
+  // add the stars to the page
+  for (let i = 0; i < 100; i++) {
+      const newStar = star.cloneNode();
+      newStar.style.left = `${Math.random() * 100}%`;
+      newStar.style.top = `${Math.random() * 100}%`; // Use 100% since the parent is already 20vh
+      newStar.style.width = `${Math.random() * 2 + 1}px`;
+      newStar.style.height = newStar.style.width;
+      newStar.style.animationDuration = `${Math.random() * 2 + 1}s`;
+      // add the twinkling animation to the stars
+      if (Math.random() > 0.7) {
+          newStar.style.animationName = 'twinkle';
+          // ease-in-out for a smooth transition
+          newStar.style.animationTimingFunction = 'ease-in-out';
+          // repeat the animation infinitely
+          newStar.style.animationIterationCount = 'infinite';
+          // randomize how fast the stars twinkle
+          newStar.style.animationDuration = `${Math.random() * 3 + 1}s`;
+      }
+      stars.appendChild(newStar);
+  }
+  document.body.appendChild(stars);
+  // move the stars to the background
+  stars.style.zIndex = '-2';
+}
+
+populateStars();
