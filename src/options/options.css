@@ -88,6 +88,10 @@ h1 {
     margin-bottom: -1%;
 }
 
+.reasons-list {
+    font-size: 0.8em;
+}
+
 label {
     font-size: 0.75em;
     color: white;
