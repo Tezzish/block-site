@@ -176,10 +176,15 @@ function populateStars() {
             removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-url', url);
-            removeButton.addEventListener('click', function(event) {
+            removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const url = removeButton.getAttribute('data-url');
-                sendRemoveTempUnblockMessage(url);
+                try {
+                    await sendRemoveTempUnblockMessage(url);
+                    populateTempUnblocks();
+                } catch (error) {
+                    console.error("Error removing temporary unblock:", error);
+                }
             });
             listItem.appendChild(removeButton);
         });

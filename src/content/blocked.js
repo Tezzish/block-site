@@ -14,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Description: This script is injected into the blocked page to handle the unblock request form
   unblockRequestForm.addEventListener('submit', function(event) {
       event.preventDefault();
+      const unblockModal = document.getElementById('unblock-modal');
+      unblockModal.style.visibility = 'visible';
       // if there isn't a password in the storage, throw an error
       getFromStorage('Passphrase').then(password => {
           if (!password) {

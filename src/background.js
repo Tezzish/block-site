@@ -165,9 +165,12 @@ async function removeTempUnblock(message, sender) {
     if (tempUnblocks.delete(url)) {
       await setInStorage('tempUnblocks', tempUnblocks);
       await browser.alarms.clear(url);
+      return { status: "success", message: "Temporary unblock removed" };
     }
+    return { status: "error", message: "URL not found in temporary unblocks" };
   } catch (error) {
     console.error("Error in removeTempUnblock:", error);
+    return { status: "error", message: "An error occurred while removing the temporary unblock" };
   }
 }
 
@@ -270,13 +273,14 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true;
   } else if (message.action === "removeTempUnblock") {
-    removeTempUnblock(message, sender).
-      then(sendResponse)
+    removeTempUnblock(message, sender)
+      .then(sendResponse)
       .catch(error => {
         console.error("Error in message listener:", error);
         sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
       });
   }
+  return true;
 });
 
 // Listener for alarm events
