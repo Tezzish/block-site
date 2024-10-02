@@ -5,6 +5,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordForm = document.getElementById('password-form');
     const passwordInput = document.getElementById('password');
 
+    // Function to add twinkling stars to the top 20% of the page
+function populateStars() {
+    // create the html elements
+    const stars = document.createElement('div');
+    stars.classList.add('stars');
+    stars.style.position = 'absolute';
+    stars.style.width = '100%';
+    stars.style.height = '35vh'; // Set height to 20% of the viewport height
+    stars.style.top = '0';
+    stars.style.left = '0';
+    stars.style.pointerEvents = 'none'; // Ensure it doesn't interfere with other elements
+  
+    const star = document.createElement('div');
+    star.classList.add('star');
+    star.style.position = 'absolute';
+  
+    star.style.backgroundColor = 'white'; // Set color of each star
+    star.style.borderRadius = '50%'; // Make each star circular
+  
+    // add the stars to the page
+    for (let i = 0; i < 150; i++) {
+        const newStar = star.cloneNode();
+        newStar.style.left = `${Math.random() * 100}%`;
+        newStar.style.top = `${Math.random() * 100}%`; // Use 100% since the parent is already 20vh
+        newStar.style.width = `${Math.random() * 2 + 1}px`;
+        newStar.style.height = newStar.style.width;
+        newStar.style.animationDuration = `${Math.random() * 2 + 1}s`;
+        // add the twinkling animation to the stars
+        if (Math.random() > 0.7) {
+            newStar.style.animationName = 'twinkle';
+            // ease-in-out for a smooth transition
+            newStar.style.animationTimingFunction = 'ease-in-out';
+            // repeat the animation infinitely
+            newStar.style.animationIterationCount = 'infinite';
+            // randomize how fast the stars twinkle
+            newStar.style.animationDuration = `${Math.random() * 3 + 1}s`;
+        }
+        stars.appendChild(newStar);
+    }
+    document.body.appendChild(stars);
+    // move the stars to the background
+    stars.style.zIndex = '-2';
+  }
+  
+  populateStars();
+
     // Populate the accordion with unblock rules
     async function populateAccordion() {
         const blockedSites = await getFromStorage('blockedSites', new Map());

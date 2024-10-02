@@ -76,27 +76,27 @@ html {
 /* ANIMATIONS */
 
 .x1 {
-	-webkit-animation: animateCloud 45s linear infinite;
-	-moz-animation: animateCloud 45s linear infinite;
-	animation: animateCloud 45s linear infinite;
+	-webkit-animation: animateCloud 60s linear infinite;
+	-moz-animation: animateCloud 60s linear infinite;
+	animation: animateCloud 60s linear infinite;
 }
 
 .x2 {
-	-webkit-animation: animateCloud 90s linear infinite;
-	-moz-animation: animateCloud 90s linear infinite;
-	animation: animateCloud 90s linear infinite;
-}
-
-.x3 {
 	-webkit-animation: animateCloud 70s linear infinite;
 	-moz-animation: animateCloud 70s linear infinite;
 	animation: animateCloud 70s linear infinite;
 }
 
+.x3 {
+	-webkit-animation: animateCloud 75s linear infinite;
+	-moz-animation: animateCloud 75s linear infinite;
+	animation: animateCloud 75s linear infinite;
+}
+
 .x4 {
-	-webkit-animation: animateCloud 55s linear infinite;
-	-moz-animation: animateCloud 55s linear infinite;
-	animation: animateCloud 55s linear infinite;
+	-webkit-animation: animateCloud 65s linear infinite;
+	-moz-animation: animateCloud 65s linear infinite;
+	animation: animateCloud 65s linear infinite;
 }
 
 @font-face {
@@ -182,4 +182,16 @@ h1 {
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
+}
+
+@keyframes twinkle {
+    0% {
+        opacity: 0.35;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.35;
+    }
 }

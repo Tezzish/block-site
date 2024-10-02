@@ -9,10 +9,27 @@ body {
     background-size: 100% 100%;
 }
 
+@font-face {
+    font-family: "Stardew Valley";
+    src: url("../assets/fonts/Stardew_Valley.ttf") format("truetype");
+}
+
 .accordion-header:active {
     background-color: white;
 }
 
 .accordion-button:active {
     background-color: white;
+}
+
+@keyframes twinkle {
+    0% {
+        opacity: 0.35;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.35;
+    }
 }
