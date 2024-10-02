@@ -12,7 +12,7 @@ function populateStars() {
     stars.classList.add('stars');
     stars.style.position = 'fixed';
     stars.style.width = '100%';
-    stars.style.height = '40vh';
+    stars.style.height = '100vh';
     stars.style.top = '0';
     stars.style.left = '0';
     stars.style.pointerEvents = 'none';
@@ -25,7 +25,7 @@ function populateStars() {
     star.style.borderRadius = '50%';
   
     // add the stars to the page
-    for (let i = 0; i < 225; i++) {
+    for (let i = 0; i < 550; i++) {
         const newStar = star.cloneNode();
         newStar.style.left = `${Math.random() * 100}%`;
         newStar.style.top = `${Math.random() * 100}%`;
@@ -93,6 +93,13 @@ function populateStars() {
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-pattern', pattern);
 
+            removeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const buttonPattern = removeButton.getAttribute('data-pattern');
+                console.log('Removing rule:', buttonPattern);
+                sendPermUnblockMessage(buttonPattern);
+            });
+
             // Append the remove button and text to the button wrapper
             accordionButtonWrapper.appendChild(accordionButton);
             accordionButtonWrapper.appendChild(removeButton);
@@ -147,16 +154,6 @@ function populateStars() {
             accordionItem.appendChild(accordionCollapse);
             accordionContainer.appendChild(accordionItem);
         });
-        
-        // Add event listeners for remove buttons
-        document.querySelectorAll('.remove-rule-btn').forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.preventDefault();
-                const buttonPattern = button.getAttribute('data-pattern');
-                console.log('Removing rule:', buttonPattern);
-                sendPermUnblockMessage(buttonPattern);
-            });
-        });
     }
 
     async function populateTempUnblocks() {
@@ -179,39 +176,17 @@ function populateStars() {
             removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-url', url);
+            removeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const url = removeButton.getAttribute('data-url');
+                sendRemoveTempUnblockMessage(url);
+            });
             listItem.appendChild(removeButton);
         });
         return;
     }
 
     populateTempUnblocks();
-
-    // Add event listener for remove temp unblock buttons
-    document.addEventListener('click', async function(event) {
-        if (event.target.classList.contains('remove-temp-unblock-btn')) {
-            const url = event.target.getAttribute('data-url');
-            const inputPassphrase = prompt('Enter your passphrase to remove the temporary unblock');
-            if (!inputPassphrase) {
-                return;
-            }
-            hashString(inputPassphrase).then(hashedPassphrase => {
-                browser.runtime.sendMessage({
-                    action: 'tempUnblock',
-                    passphrase: hashedPassphrase,
-                    url: url
-                }).then(response => {
-                    if (response.status === 'success') {
-                        alert(response.message);
-                        populateTempUnblocks();
-                    } else {
-                        alert(response.message);
-                    }
-                });
-            }).catch(error => {
-                console.error('Error in hashing password:', error);
-            });
-        }
-    });
 
     // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
@@ -263,6 +238,28 @@ function populateStars() {
         alert('Redirect URL removed successfully!');
     });
 
+    async function sendRemoveTempUnblockMessage(url) {
+        const inputPassphrase = prompt('Enter your passphrase to remove the rule');
+        if (!inputPassphrase) {
+            return;
+        }
+        hashString(inputPassphrase).then(hashedPassphrase => {
+            browser.runtime.sendMessage({
+                action: 'removeTempUnblock',
+                passphrase: hashedPassphrase,
+                url: url
+            }).then(response => {
+                if (response.status === 'success') {
+                    populateTempUnblocks();
+                } else {
+                    alert(response.message);
+                }
+            })
+        }).catch(error => {
+            console.error('Error in hashing password:', error);
+        });
+    }
+
     async function sendPermUnblockMessage(pattern) {
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
         if (!inputPassphrase) {
@@ -275,7 +272,6 @@ function populateStars() {
                 pattern: pattern
             }).then(response => {
                 if (response.status === 'success') {
-                    alert(response.message);
                     populateAccordion();
                 } else {
                     alert(response.message);

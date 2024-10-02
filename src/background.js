@@ -15,15 +15,20 @@ async function isTemporarilyUnblocked(url) {
   if (tempUnblocks.has(pattern)) {
     const expiryTime = tempUnblocks.get(pattern);
     if (expiryTime && expiryTime < Date.now()) {
-      console.log("Removing expired temporary unblock:", pattern);
-      console.log(tempUnblocks.delete(pattern));
-      console.log(tempUnblocks.keys());
-      await setInStorage('tempUnblocks', tempUnblocks);
+      await removeTempUnblockFromStorage(pattern);
       return false;
     }
     return expiryTime && expiryTime > Date.now();
   }
   return false;
+}
+
+async function removeTempUnblockFromStorage(url) {
+  const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+  if (tempUnblocks.delete(url)) {
+    await setInStorage('tempUnblocks', tempUnblocks);
+    await browser.alarms.clear(url);
+  }
 }
 
 /**
@@ -149,6 +154,23 @@ async function addToTempUnblockedReasons(url, reason, duration) {
   }
 }
 
+async function removeTempUnblock(message, sender) {
+  try {
+    const password = await getFromStorage("Passphrase");
+    if (message.passphrase !== password) {
+      return { status: "error", message: "Incorrect passphrase" };
+    }
+    const url = message.url;
+    const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+    if (tempUnblocks.delete(url)) {
+      await setInStorage('tempUnblocks', tempUnblocks);
+      await browser.alarms.clear(url);
+    }
+  } catch (error) {
+    console.error("Error in removeTempUnblock:", error);
+  }
+}
+
 // Permanent Unblock Functions
 // ---------------------------
 
@@ -236,7 +258,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(sendResponse)
       .catch(error => {
         console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" });
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "handletemp" });
       });
     return true;
   } else if (message.action === "permUnblock") {
@@ -244,10 +266,18 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(sendResponse)
       .catch(error => {
         console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" });
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "perm" });
       });
     return true;
-  }});
+  } else if (message.action === "removeTempUnblock") {
+    removeTempUnblock(message, sender).
+      then(sendResponse)
+      .catch(error => {
+        console.error("Error in message listener:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
+      });
+  }
+});
 
 // Listener for alarm events
 browser.alarms.onAlarm.addListener(handleAlarm);
