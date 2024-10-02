@@ -162,21 +162,56 @@ function populateStars() {
     async function populateTempUnblocks() {
         const urls = await getFromStorage('tempUnblocks', new Map());
         const unblockList = Array.from(urls.keys());
-        console.log('Temp unblocks:', unblockList);
         const tempUnblockList = document.getElementById('temp-unblock-list');
         tempUnblockList.innerHTML = '';
         // add the urls to the list
         unblockList.forEach(url => {
             const listItem = document.createElement('li');
+            listItem.classList.add('temp-list-item');
             listItem.classList.add('list-group-item');
-            listItem.textContent = url;
+            const heading = document.createElement('h2');
+            heading.classList.add("temp-unblock-heading");
+            heading.textContent = url;
+            listItem.appendChild(heading);
             tempUnblockList.appendChild(listItem);
+            // add the remove temp unblock button
+            const removeButton = document.createElement('button');
+            removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
+            removeButton.innerHTML = '<i class="bi bi-trash"></i>';
+            removeButton.setAttribute('data-url', url);
+            listItem.appendChild(removeButton);
         });
-
         return;
     }
 
     populateTempUnblocks();
+
+    // Add event listener for remove temp unblock buttons
+    document.addEventListener('click', async function(event) {
+        if (event.target.classList.contains('remove-temp-unblock-btn')) {
+            const url = event.target.getAttribute('data-url');
+            const inputPassphrase = prompt('Enter your passphrase to remove the temporary unblock');
+            if (!inputPassphrase) {
+                return;
+            }
+            hashString(inputPassphrase).then(hashedPassphrase => {
+                browser.runtime.sendMessage({
+                    action: 'tempUnblock',
+                    passphrase: hashedPassphrase,
+                    url: url
+                }).then(response => {
+                    if (response.status === 'success') {
+                        alert(response.message);
+                        populateTempUnblocks();
+                    } else {
+                        alert(response.message);
+                    }
+                });
+            }).catch(error => {
+                console.error('Error in hashing password:', error);
+            });
+        }
+    });
 
     // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
