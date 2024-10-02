@@ -10,10 +10,20 @@ import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
  * @returns {Promise<boolean>} - A promise that resolves to true if the URL is temporarily unblocked.
  */
 async function isTemporarilyUnblocked(url) {
-  const pattern = processUrl(url);
+  const pattern = processUrl(url);  
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
-  const expiryTime = tempUnblocks.get(pattern);
-  return expiryTime && expiryTime > Date.now();
+  if (tempUnblocks.has(pattern)) {
+    const expiryTime = tempUnblocks.get(pattern);
+    if (expiryTime && expiryTime < Date.now()) {
+      console.log("Removing expired temporary unblock:", pattern);
+      console.log(tempUnblocks.delete(pattern));
+      console.log(tempUnblocks.keys());
+      await setInStorage('tempUnblocks', tempUnblocks);
+      return false;
+    }
+    return expiryTime && expiryTime > Date.now();
+  }
+  return false;
 }
 
 /**
@@ -23,8 +33,9 @@ async function isTemporarilyUnblocked(url) {
  * @returns {Promise<boolean>} - A promise that resolves to the result of the check.
  */
 async function isBlocked(url) {
-  const isUnblocked = await isTemporarilyUnblocked(url);
-  if (isUnblocked) {
+  const isTempUnblocked = await isTemporarilyUnblocked(url);
+  console.log("isTempUnblocked:", isTempUnblocked);
+  if (isTempUnblocked) {
     return false;
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
@@ -37,7 +48,6 @@ async function isRedirect() {
       const redirectUrl = await getFromStorage("redirectUrl");
       return new URL(redirectUrl);
   } catch (error) {
-      console.error("Error in isRedirect:", error);
       return null;
   }
 }

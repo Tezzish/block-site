@@ -81,6 +81,11 @@ h1 {
     border-radius: var(--accordion-border-radius);
 }
 
+.list-group-item {
+    background-color: #2b008f;
+    color: #bcdfff;
+}
+
 .remove-rule-btn {
     margin-right: 16px;
 }

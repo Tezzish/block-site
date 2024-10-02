@@ -6,8 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const clouds = document.querySelectorAll('.cloud');
   var i = 0;
   clouds.forEach(cloud => {
-      // make sure that the cloud is from 0 to 40% from the top
-      console.log(i);
       cloud.style.top = `${Math.random() * 20}%`;
       cloud.style.animationDelay = `${i * 10}s`;
       i++;

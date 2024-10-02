@@ -25,7 +25,7 @@ function populateStars() {
     star.style.borderRadius = '50%';
   
     // add the stars to the page
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 225; i++) {
         const newStar = star.cloneNode();
         newStar.style.left = `${Math.random() * 100}%`;
         newStar.style.top = `${Math.random() * 100}%`;
@@ -158,6 +158,26 @@ function populateStars() {
             });
         });
     }
+
+    async function populateTempUnblocks() {
+        const urls = await getFromStorage('tempUnblocks', new Map());
+        const unblockList = Array.from(urls.keys());
+        console.log('Temp unblocks:', unblockList);
+        const tempUnblockList = document.getElementById('temp-unblock-list');
+        tempUnblockList.innerHTML = '';
+        // add the urls to the list
+        unblockList.forEach(url => {
+            const listItem = document.createElement('li');
+            listItem.classList.add('list-group-item');
+            listItem.textContent = url;
+            tempUnblockList.appendChild(listItem);
+        });
+
+        return;
+    }
+
+    populateTempUnblocks();
+
     // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
         event.preventDefault();
@@ -200,6 +220,7 @@ function populateStars() {
             alert('Please enter a URL.');
         }
     });
+
     const removeRedirectUrl = document.getElementById('remove-redirect-url');
     removeRedirectUrl.addEventListener('click', async function(event) {
         event.preventDefault();
