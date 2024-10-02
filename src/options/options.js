@@ -45,8 +45,8 @@ function populateStars() {
         stars.appendChild(newStar);
     }
     document.body.appendChild(stars);
-    // move the stars to the background
-    stars.style.zIndex = '-2';
+    // // move the stars to the background
+    stars.style.zIndex = '-1';
   }
   
   populateStars();
@@ -174,6 +174,32 @@ function populateStars() {
             alert('Please enter a password.');
         }
     });
+
+    function checkUrlValidity(url) {
+        try {
+            new URL(url);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    const redirectForm = document.getElementById('redirect-url-form');
+    redirectForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const redirectUrl = document.getElementById('redirect-url').value
+        if (redirectUrl) {
+            if (checkUrlValidity(redirectUrl)){
+                setInStorage('redirectUrl', redirectUrl);
+                alert('Redirect URL saved successfully!');
+                document.getElementById('redirect-url').value = '';
+            } else {
+                alert(redirectUrl + ' is not a valid URL.');
+            }
+        } else {
+            alert('Please enter a URL.');
+        }
+    });    
 
     async function sendPermUnblockMessage(pattern) {
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');

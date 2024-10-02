@@ -4,9 +4,20 @@ body {
     height: 100vh;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: auto; /* Allow scrolling */
+    position: relative; /* Ensure the pseudo-element is positioned relative to the body */
+}
+
+body::before {
+    content: "";
+    position: fixed; /* Fix the background in place */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: linear-gradient(to bottom, #0b0422, #0e0035, #260057, #3b0063) !important;
     background-size: 100% 100%;
+    z-index: -1; /* Ensure the background is behind all other content */
 }
 
 @font-face {
@@ -59,8 +70,7 @@ h1 {
 
 .accordion-body {
     background-color: var(--bs-accordion-bg);
-    /* font-family: 'Stardew Valley'; */
-    font-size: 1.25em;
+    font-size: 1.1em;
     border-radius: var(--accordion-border-radius);
 }
 
@@ -70,7 +80,6 @@ h1 {
 
 #footer {
     position: absolute;
-    bottom: 1.5%;
     width: 50%;
     text-align: center;
     font-family: "Stardew Valley";
@@ -80,7 +89,7 @@ h1 {
     transform: translateX(-50%);
 }
 
-#set-password-header {
+.field-header {
     font-size: 1.1em;
     color: white;
     text-align: center;
