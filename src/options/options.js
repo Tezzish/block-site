@@ -10,25 +10,25 @@ function populateStars() {
     // create the html elements
     const stars = document.createElement('div');
     stars.classList.add('stars');
-    stars.style.position = 'absolute';
+    stars.style.position = 'fixed';
     stars.style.width = '100%';
-    stars.style.height = '35vh'; // Set height to 20% of the viewport height
+    stars.style.height = '100vh';
     stars.style.top = '0';
     stars.style.left = '0';
-    stars.style.pointerEvents = 'none'; // Ensure it doesn't interfere with other elements
+    stars.style.pointerEvents = 'none';
   
     const star = document.createElement('div');
     star.classList.add('star');
     star.style.position = 'absolute';
   
-    star.style.backgroundColor = 'white'; // Set color of each star
-    star.style.borderRadius = '50%'; // Make each star circular
+    star.style.backgroundColor = 'white';
+    star.style.borderRadius = '50%';
   
     // add the stars to the page
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 550; i++) {
         const newStar = star.cloneNode();
         newStar.style.left = `${Math.random() * 100}%`;
-        newStar.style.top = `${Math.random() * 100}%`; // Use 100% since the parent is already 20vh
+        newStar.style.top = `${Math.random() * 100}%`;
         newStar.style.width = `${Math.random() * 2 + 1}px`;
         newStar.style.height = newStar.style.width;
         newStar.style.animationDuration = `${Math.random() * 2 + 1}s`;
@@ -93,6 +93,13 @@ function populateStars() {
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-pattern', pattern);
 
+            removeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const buttonPattern = removeButton.getAttribute('data-pattern');
+                console.log('Removing rule:', buttonPattern);
+                sendPermUnblockMessage(buttonPattern);
+            });
+
             // Append the remove button and text to the button wrapper
             accordionButtonWrapper.appendChild(accordionButton);
             accordionButtonWrapper.appendChild(removeButton);
@@ -147,17 +154,40 @@ function populateStars() {
             accordionItem.appendChild(accordionCollapse);
             accordionContainer.appendChild(accordionItem);
         });
-        
-        // Add event listeners for remove buttons
-        document.querySelectorAll('.remove-rule-btn').forEach(button => {
-            button.addEventListener('click', function(event) {
-                event.preventDefault();
-                const buttonPattern = button.getAttribute('data-pattern');
-                console.log('Removing rule:', buttonPattern);
-                sendPermUnblockMessage(buttonPattern);
-            });
-        });
     }
+
+    async function populateTempUnblocks() {
+        const urls = await getFromStorage('tempUnblocks', new Map());
+        const unblockList = Array.from(urls.keys());
+        const tempUnblockList = document.getElementById('temp-unblock-list');
+        tempUnblockList.innerHTML = '';
+        // add the urls to the list
+        unblockList.forEach(url => {
+            const listItem = document.createElement('li');
+            listItem.classList.add('temp-list-item');
+            listItem.classList.add('list-group-item');
+            const heading = document.createElement('h2');
+            heading.classList.add("temp-unblock-heading");
+            heading.textContent = url;
+            listItem.appendChild(heading);
+            tempUnblockList.appendChild(listItem);
+            // add the remove temp unblock button
+            const removeButton = document.createElement('button');
+            removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
+            removeButton.innerHTML = '<i class="bi bi-trash"></i>';
+            removeButton.setAttribute('data-url', url);
+            removeButton.addEventListener('click', function(event) {
+                event.preventDefault();
+                const url = removeButton.getAttribute('data-url');
+                sendRemoveTempUnblockMessage(url);
+            });
+            listItem.appendChild(removeButton);
+        });
+        return;
+    }
+
+    populateTempUnblocks();
+
     // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
         event.preventDefault();
@@ -199,7 +229,36 @@ function populateStars() {
         } else {
             alert('Please enter a URL.');
         }
-    });    
+    });
+
+    const removeRedirectUrl = document.getElementById('remove-redirect-url');
+    removeRedirectUrl.addEventListener('click', async function(event) {
+        event.preventDefault();
+        await browser.storage.local.remove('redirectUrl');
+        alert('Redirect URL removed successfully!');
+    });
+
+    async function sendRemoveTempUnblockMessage(url) {
+        const inputPassphrase = prompt('Enter your passphrase to remove the rule');
+        if (!inputPassphrase) {
+            return;
+        }
+        hashString(inputPassphrase).then(hashedPassphrase => {
+            browser.runtime.sendMessage({
+                action: 'removeTempUnblock',
+                passphrase: hashedPassphrase,
+                url: url
+            }).then(response => {
+                if (response.status === 'success') {
+                    populateTempUnblocks();
+                } else {
+                    alert(response.message);
+                }
+            })
+        }).catch(error => {
+            console.error('Error in hashing password:', error);
+        });
+    }
 
     async function sendPermUnblockMessage(pattern) {
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
@@ -213,7 +272,6 @@ function populateStars() {
                 pattern: pattern
             }).then(response => {
                 if (response.status === 'success') {
-                    alert(response.message);
                     populateAccordion();
                 } else {
                     alert(response.message);

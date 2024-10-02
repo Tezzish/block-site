@@ -10,10 +10,25 @@ import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
  * @returns {Promise<boolean>} - A promise that resolves to true if the URL is temporarily unblocked.
  */
 async function isTemporarilyUnblocked(url) {
-  const pattern = processUrl(url);
+  const pattern = processUrl(url);  
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
-  const expiryTime = tempUnblocks.get(pattern);
-  return expiryTime && expiryTime > Date.now();
+  if (tempUnblocks.has(pattern)) {
+    const expiryTime = tempUnblocks.get(pattern);
+    if (expiryTime && expiryTime < Date.now()) {
+      await removeTempUnblockFromStorage(pattern);
+      return false;
+    }
+    return expiryTime && expiryTime > Date.now();
+  }
+  return false;
+}
+
+async function removeTempUnblockFromStorage(url) {
+  const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+  if (tempUnblocks.delete(url)) {
+    await setInStorage('tempUnblocks', tempUnblocks);
+    await browser.alarms.clear(url);
+  }
 }
 
 /**
@@ -23,8 +38,9 @@ async function isTemporarilyUnblocked(url) {
  * @returns {Promise<boolean>} - A promise that resolves to the result of the check.
  */
 async function isBlocked(url) {
-  const isUnblocked = await isTemporarilyUnblocked(url);
-  if (isUnblocked) {
+  const isTempUnblocked = await isTemporarilyUnblocked(url);
+  console.log("isTempUnblocked:", isTempUnblocked);
+  if (isTempUnblocked) {
     return false;
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
@@ -33,8 +49,12 @@ async function isBlocked(url) {
 }
 
 async function isRedirect() {
-  const redirectUrl = await getFromStorage("redirectUrl");
-  return new URL(redirectUrl);
+  try {
+      const redirectUrl = await getFromStorage("redirectUrl");
+      return new URL(redirectUrl);
+  } catch (error) {
+      return null;
+  }
 }
 
 /**
@@ -134,6 +154,23 @@ async function addToTempUnblockedReasons(url, reason, duration) {
   }
 }
 
+async function removeTempUnblock(message, sender) {
+  try {
+    const password = await getFromStorage("Passphrase");
+    if (message.passphrase !== password) {
+      return { status: "error", message: "Incorrect passphrase" };
+    }
+    const url = message.url;
+    const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+    if (tempUnblocks.delete(url)) {
+      await setInStorage('tempUnblocks', tempUnblocks);
+      await browser.alarms.clear(url);
+    }
+  } catch (error) {
+    console.error("Error in removeTempUnblock:", error);
+  }
+}
+
 // Permanent Unblock Functions
 // ---------------------------
 
@@ -221,7 +258,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(sendResponse)
       .catch(error => {
         console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" });
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "handletemp" });
       });
     return true;
   } else if (message.action === "permUnblock") {
@@ -229,10 +266,18 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(sendResponse)
       .catch(error => {
         console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" });
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "perm" });
       });
     return true;
-  }});
+  } else if (message.action === "removeTempUnblock") {
+    removeTempUnblock(message, sender).
+      then(sendResponse)
+      .catch(error => {
+        console.error("Error in message listener:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
+      });
+  }
+});
 
 // Listener for alarm events
 browser.alarms.onAlarm.addListener(handleAlarm);

@@ -20,7 +20,11 @@
     <div class="container mt-4">
         <h1>Blocked Rules</h1>
         <div class="accordion" id="unblock-rules-accordion">
-            <!-- Add rules here -->
+        </div>
+        <div list="temp-unblock-list">
+            <h1>Temporary Unblocks</h2>
+            <ul id="temp-unblock-list" class="list-group">
+            </ul>
         </div>
         <div id="footer">
             <div class="mt-4" id="set-password-div">
@@ -41,6 +45,7 @@
                         <input type="text" class="form-control" id="redirect-url" name="Redirect URL" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Set URL</button>
+                    <button id="remove-redirect-url" class="btn btn-primary btn-danger">Remove URL</button>
                 </form>
             </div>
             <div class="row">
