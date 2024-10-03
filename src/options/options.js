@@ -159,8 +159,17 @@ function populateStars() {
     async function populateTempUnblocks() {
         const urls = await getFromStorage('tempUnblocks', new Map());
         const unblockList = Array.from(urls.keys());
-        const tempUnblockList = document.getElementById('temp-unblock-list');
-        tempUnblockList.innerHTML = '';
+        const tempUnblockListElement = document.getElementById('temp-unblock-list');
+        tempUnblockListElement.innerHTML = '';
+
+        if (unblockList.length === 0) {
+            tempUnblockListElement.innerHTML = '<li class="temp-list-item list-group-item"></li>';
+            const heading = document.createElement('h2');
+            heading.classList.add("temp-unblock-heading");
+            heading.textContent = 'No temporary unblocks found';
+            tempUnblockListElement.firstChild.appendChild(heading);
+            return;
+        }
         // add the urls to the list
         unblockList.forEach(url => {
             const listItem = document.createElement('li');
@@ -170,7 +179,7 @@ function populateStars() {
             heading.classList.add("temp-unblock-heading");
             heading.textContent = url;
             listItem.appendChild(heading);
-            tempUnblockList.appendChild(listItem);
+            tempUnblockListElement.appendChild(listItem);
             // add the remove temp unblock button
             const removeButton = document.createElement('button');
             removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
