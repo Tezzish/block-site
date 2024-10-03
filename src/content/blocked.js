@@ -14,8 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Description: This script is injected into the blocked page to handle the unblock request form
   unblockRequestForm.addEventListener('submit', function(event) {
       event.preventDefault();
-      const unblockModal = document.getElementById('unblock-modal');
-      unblockModal.style.visibility = 'visible';
       // if there isn't a password in the storage, throw an error
       getFromStorage('Passphrase').then(password => {
           if (!password) {
@@ -74,16 +72,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
   });
 
-  // Add an event listener to the unblock button to toggle the unblock request form
+  let modalClosed = false;
+
   unblockButton.addEventListener('click', function() {
-    if (unblockRequestForm.style.visibility === 'visible') {
-        unblockRequestForm.style.visibility = 'hidden';
-        unblockButton.innerText = 'Like to unblock?';
-    } else {
-        unblockRequestForm.style.visibility = 'visible';
-        // unblockButton.innerText = 'Submit request';
-        unblockButton.style.visibility = 'hidden';
-    }
+      if (unblockRequestForm.style.visibility === 'visible') {
+          unblockRequestForm.style.visibility = 'hidden';
+          unblockButton.innerText = 'Like to unblock?';
+      } else {
+          const unblockModal = document.getElementById('unblock-modal');
+          unblockModal.style.display = 'block';
+          // start the countdown for the progress bar in the modal 
+          const progressBar = document.getElementById('countdown-progress-bar');
+          let width = 100;
+          const totalSteps = 10 * 20;
+          const decrement = 100 / totalSteps;
+          let id = setInterval(frame, 50);
+
+          function frame() {
+              if (width <= 0) {
+                  clearInterval(id);
+              } else {
+                  width -= decrement;
+                  progressBar.style.width = width + '%';
+              }
+          }
+          // Reset the flag when the modal is shown
+          modalClosed = false;
+  
+          // Add event listener for the modal close button
+          document.getElementById("close-modal").addEventListener('click', function(event) {
+              console.log('close modal');
+              modalClosed = true;
+              unblockModal.style.display = 'none';
+          });
+  
+          setTimeout(() => {
+              if (!modalClosed) {
+                  unblockRequestForm.style.visibility = 'visible';
+                  unblockButton.style.visibility = 'hidden';
+                  unblockModal.style.display = 'none';
+              }
+          }, 11000);
+      }
   });
 
   optionsLink.addEventListener('click', function(event) {
