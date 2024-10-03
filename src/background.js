@@ -39,7 +39,6 @@ async function removeTempUnblockFromStorage(url) {
  */
 async function isBlocked(url) {
   const isTempUnblocked = await isTemporarilyUnblocked(url);
-  console.log("isTempUnblocked:", isTempUnblocked);
   if (isTempUnblocked) {
     return false;
   }
@@ -73,8 +72,31 @@ async function redirectIfBlocked(url) {
       const encodedUrl = encodeURIComponent(url);
       const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
       browser.tabs.update({ url: blockedPageUrl });
+      return true;
     }
   });
+  return false;
+}
+
+async function redirectIfUnblocked(url) {
+  // if it's not an extension page, return
+  if (!url.startsWith("moz-extension")) {
+    return false;
+  }
+  const urlObj = new URL(url);
+  // get the encoded url from the query string
+  const urlParams = new URLSearchParams(urlObj.search);
+  const blockedUrl = urlParams.get('blockedUrl');
+  if (!blockedUrl) {
+    console.error("Blocked URL not found in query string");
+    return;
+  }
+  const decodedUrl = decodeURIComponent(blockedUrl);
+  // if not blocked, redirect to the original URL
+  if (!await isBlocked(decodedUrl)) {
+    browser.tabs.update({ url: decodedUrl });
+  }
+  return true;
 }
 
 // Temporary Unblock Functions
@@ -231,12 +253,19 @@ async function removeFromBlockedSites(pattern) {
  */
 function handleAlarm(alarm) {
   const pattern = alarm.name;
+  console.log("Alarm triggered for pattern:", pattern);
 
   getFromStorage('tempUnblocks', new Map())
     .then(tempUnblocks => {
-      if (tempUnblocks.has(pattern)) {  
+      console.log("Retrieved tempUnblocks:", tempUnblocks);
+      if (tempUnblocks.has(pattern)) {
+        console.log("Pattern found in tempUnblocks:", pattern);
         tempUnblocks.delete(pattern);
+        console.log("Pattern deleted from tempUnblocks:", pattern);
+        console.log("Updated tempUnblocks:", tempUnblocks.keys());
         return setInStorage('tempUnblocks', tempUnblocks);
+      } else {
+        console.log("Pattern not found in tempUnblocks:", pattern);
       }
     })
     .catch(error => {
@@ -249,8 +278,24 @@ function handleAlarm(alarm) {
 
 // Listener for tab updates to redirect if the URL changes
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  //if starts with moz-extension and ends with options.html, return
+  if (tab.url) {
+    if (tab.url.startsWith("moz-extension") && tab.url.endsWith("options.html")) {
+      console.log("Options page opened");
+      return;
+    }
+  }
   if (changeInfo.url) {
-    redirectIfBlocked(changeInfo.url);
+    redirectIfBlocked(changeInfo.url).then(isBlocked => {
+      if (isBlocked) return true;
+      return redirectIfUnblocked(changeInfo.url);
+    }).then(isUnblocked => {
+      if (isUnblocked) return true;
+      return false;
+    }).catch(error => {
+      console.error("Error in tab update listener:", error);
+      return false;
+    });
   }
 });
 
