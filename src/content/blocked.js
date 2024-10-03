@@ -81,7 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
           const unblockModal = document.getElementById('unblock-modal');
           unblockModal.style.display = 'block';
-          // start the countdown for the progress bar in the modal 
           const progressBar = document.getElementById('countdown-progress-bar');
           let width = 100;
           const totalSteps = 10 * 20;
@@ -104,10 +103,11 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('close modal');
               modalClosed = true;
               unblockModal.style.display = 'none';
+              width = 100;
           });
   
           setTimeout(() => {
-              if (!modalClosed) {
+              if (!modalClosed && width <= 0) {
                   unblockRequestForm.style.visibility = 'visible';
                   unblockButton.style.visibility = 'hidden';
                   unblockModal.style.display = 'none';
