@@ -162,6 +162,11 @@ input {
     margin-bottom: 16px;
 }
 
+#no-temp-unblocks {
+    background-color: #bcdfff;
+    color: #2b008f;
+}
+
 @keyframes twinkle {
     0% {
         opacity: 0.35;

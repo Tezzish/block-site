@@ -163,7 +163,8 @@ function populateStars() {
         tempUnblockListElement.innerHTML = '';
 
         if (unblockList.length === 0) {
-            tempUnblockListElement.innerHTML = '<li class="temp-list-item list-group-item"></li>';
+            tempUnblockListElement.innerHTML = '<li class="temp-list-item list-group-item text-start"></li>';
+            tempUnblockListElement.firstChild.id = 'no-temp-unblocks';
             const heading = document.createElement('h2');
             heading.classList.add("temp-unblock-heading");
             heading.textContent = 'No temporary unblocks found';
