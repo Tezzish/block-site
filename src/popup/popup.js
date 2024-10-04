@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     document.getElementById('addSite').addEventListener('click', async () => {
     
-        console.log("Adding site to blocked list: " + pattern);
         // we should not be able to block the extenion's own pages
         if (activeTab.url.includes('moz-extension://')) {
           return;

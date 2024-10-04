@@ -29,12 +29,14 @@
             </div>
         </div>
     </div>
-    <div class="container mt-5">
-        <div class="row">
-            <div class="text-center">
-                <h1 id = "blocked-site" class="mb-4"><b>This site has been blocked by your extension...</b></h1>
+    <div id="outer-container" class="container mt-5">
+        <div id = "inner-container" class="row">
+            <div id="innerste-container" class="text-center">
+                <h1 id = "blocked-heading" class="mb-4"><b>This site has been blocked by your extension...</b></h1>
+                <div id="timer-container">
+                    <div id="timer" class="timer">0h 0m 0s</div>
+                </div>
                 <button id="unblock-button" class="mb-3 mt-5 button">Like to unblock?</button>
-                <!-- Unblock form -->
                 <form id="unblock-request-form" class="text-left" style="visibility:hidden;">
                     <div class="form-group" id="reason-div">
                         <label for="reason">Reason for unblocking:</label>

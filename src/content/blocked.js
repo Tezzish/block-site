@@ -1,4 +1,4 @@
-import { hashString, getFromStorage } from '../utils/utils.js';
+import { hashString, getFromStorage, processUrl } from '../utils/utils.js';
 document.addEventListener('DOMContentLoaded', () => {
   const unblockRequestForm = document.getElementById('unblock-request-form');
   const unblockButton = document.getElementById('unblock-button');
@@ -10,6 +10,50 @@ document.addEventListener('DOMContentLoaded', () => {
       cloud.style.animationDelay = `${i * 10}s`;
       i++;
     });
+  // create a timer to show the time since the page was blocked
+  const timerCon = document.getElementById('timer-container')
+
+  const timerHeader = document.createElement('h2');
+  timerHeader.textContent = "You've blocked this site for:";
+
+  const timer = document.getElementById('timer');
+
+  const motivationExpressions = [
+      "You're doing great!",
+      "Keep it up!",
+      "You can do it!",
+      "Stay strong!",
+      "You got this!",
+  ];
+  const motivation = document.createElement('h3');
+  motivation.textContent = motivationExpressions[Math.floor(Math.random() * motivationExpressions.length)];
+  timerCon.appendChild(timerHeader);
+  timerCon.appendChild(timer);
+  timerCon.appendChild(motivation);
+
+  // get the time the page was blocked
+  getFromStorage('blockedSites').then(blockedSites => {
+      const url = new URL(window.location.href);
+      const blockedUrl = url.searchParams.get('blockedUrl');
+      const processed = processUrl(new URL(blockedUrl));
+      const blockedTime = blockedSites.get(processed);
+      if (blockedTime) {
+          // show the timer
+          timer.style.visibility = 'visible';
+          // update the timer every second
+          setInterval(() => {
+              const currentTime = Date.now();
+              const timeDiff = currentTime - blockedTime;
+              const hours = Math.floor(timeDiff / 3600000);
+              const minutes = Math.floor((timeDiff % 3600000) / 60000);
+              const seconds = Math.floor((timeDiff % 60000) / 1000);
+              timer.textContent = `${hours}h ${minutes}m ${seconds}s`;
+          }, 1000);
+      }
+  }
+  ).catch(error => {
+      console.error('Error in getting blocked sites:', error);
+  });
 
   // Description: This script is injected into the blocked page to handle the unblock request form
   unblockRequestForm.addEventListener('submit', function(event) {

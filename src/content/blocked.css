@@ -38,7 +38,6 @@ html {
     width: 300px;
 }
 
-
 /* KEYFRAMES */
 
 @-webkit-keyframes animateCloud {
@@ -55,7 +54,6 @@ html {
     0% {
         margin-left: -1000px;
         visibility: visible;
-
     }
     100% {
         margin-left: 100%;
@@ -75,27 +73,27 @@ html {
 /* ANIMATIONS */
 
 .x1 {
-	-webkit-animation: animateCloud 60s linear infinite;
-	-moz-animation: animateCloud 60s linear infinite;
-	animation: animateCloud 60s linear infinite;
+    -webkit-animation: animateCloud 60s linear infinite;
+    -moz-animation: animateCloud 60s linear infinite;
+    animation: animateCloud 60s linear infinite;
 }
 
 .x2 {
-	-webkit-animation: animateCloud 70s linear infinite;
-	-moz-animation: animateCloud 70s linear infinite;
-	animation: animateCloud 70s linear infinite;
+    -webkit-animation: animateCloud 70s linear infinite;
+    -moz-animation: animateCloud 70s linear infinite;
+    animation: animateCloud 70s linear infinite;
 }
 
 .x3 {
-	-webkit-animation: animateCloud 75s linear infinite;
-	-moz-animation: animateCloud 75s linear infinite;
-	animation: animateCloud 75s linear infinite;
+    -webkit-animation: animateCloud 75s linear infinite;
+    -moz-animation: animateCloud 75s linear infinite;
+    animation: animateCloud 75s linear infinite;
 }
 
 .x4 {
-	-webkit-animation: animateCloud 65s linear infinite;
-	-moz-animation: animateCloud 65s linear infinite;
-	animation: animateCloud 65s linear infinite;
+    -webkit-animation: animateCloud 65s linear infinite;
+    -moz-animation: animateCloud 65s linear infinite;
+    animation: animateCloud 65s linear infinite;
 }
 
 @font-face {
@@ -103,7 +101,7 @@ html {
     src: url("../assets/fonts/Stardew_Valley.ttf") format("truetype");
 }
 
-#blocked-site {
+#blocked-heading {
     font-family: "Stardew Valley";
     font-size: 72px;
     font-weight: bolder;
@@ -111,9 +109,58 @@ html {
     text-shadow: rgb(20, 12, 0) 2px 2px 0px;
 }
 
+#inner-container {
+    width: 100%;
+}
+
+#innerste-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+/* Timer container styles */
+#timer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    margin: 2rem 0;
+}
+
+#timer-container h2 {
+    font-family: "Stardew Valley";
+    font-size: 4rem;
+    color: rgb(255, 255, 255);
+    text-shadow: rgb(20, 12, 0) 2px 2px 0px;
+    margin-top: 5%;
+}
+
+#timer-container h3 {
+    font-family: "Stardew Valley";
+    font-size: 3rem;
+    color: rgb(255, 255, 255);
+    text-shadow: rgb(20, 12, 0) 2px 2px 0px;
+    margin-bottom: 5%;
+}
+.timer {
+    font-family: "Stardew Valley";
+    font-size: 72px;
+    color: rgb(255, 255, 255);
+    text-shadow: rgb(20, 12, 0) 2px 2px 0px;
+}
+
+/* Adjust the blocked heading to work with the new layout */
+#blocked-heading {
+    margin-bottom: 0;  /* Remove bottom margin since we're using gap */
+}
+
 h1 {
     font-weight: bolder;
-    text-shadow: 1px -1px 0 #000,
+    text-shadow: 1px -1px 0 #000;
 }
 
 .button {
@@ -129,7 +176,6 @@ h1 {
     bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-
 }
 
 .button:active {
@@ -148,7 +194,7 @@ h1 {
 
 .form-control {
     font-size: 24px;
-    font-family:monospace;
+    font-family: monospace;
     padding-top: 2px;
     padding-bottom: 2px;
 }
@@ -159,7 +205,7 @@ h1 {
 
 #passphrase-div {
     border-top: none;
-    border-bottom:none;
+    border-bottom: none;
 }
 
 #duration-div {
@@ -168,10 +214,11 @@ h1 {
 
 #duration {
     font-size: 20px;
-    font-family:monospace;
+    font-family: monospace;
     padding-top: 2px;
     padding-bottom: 2px;
 }
+
 #options-link {
     font-size: 24px;
     font-family: 'Stardew Valley';
