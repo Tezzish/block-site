@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const unblockModal = document.getElementById('unblock-modal');
           unblockModal.style.display = 'block';
           const progressBar = document.getElementById('countdown-progress-bar');
-          let width = 100;
+          let width = 30;
           const totalSteps = 10 * 20;
           const decrement = 100 / totalSteps;
           let id = setInterval(frame, 50);
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
               console.log('close modal');
               modalClosed = true;
               unblockModal.style.display = 'none';
-              width = 100;
+              width = 30;
           });
   
           setTimeout(() => {
@@ -155,8 +155,10 @@ document.addEventListener('DOMContentLoaded', () => {
                   unblockRequestForm.style.visibility = 'visible';
                   unblockButton.style.visibility = 'hidden';
                   unblockModal.style.display = 'none';
+                  timerCon.style.display = 'none';
+                  timer.style.visibility = 'hidden';
               }
-          }, 11000);
+          }, 4000);
       }
   });
 
