@@ -328,5 +328,39 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return true;
 });
 
+// Add blocking on the context menu
+browser.contextMenus.create(
+  {
+    id: "block-site",
+    title: "Block this site",
+    contexts: ["all"],
+  },
+  () => {
+    if (browser.runtime.lastError) {
+      console.error("Error creating context menu item:", browser.runtime.lastError);
+    }
+  },
+);
+
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
+  switch (info.menuItemId) {
+    case "block-site":
+      const pattern = processUrl(tab.url);
+      if (tab.url.includes('moz-extension://')) {
+        return;
+      }
+
+      const blockedSites = await getFromStorage('blockedSites', new Map());
+      console.log(blockedSites);
+      if (blockedSites.has(pattern)) {
+        return;
+      }
+      blockedSites.set(pattern, Date.now());
+      await setInStorage('blockedSites', blockedSites);
+      browser.tabs.reload(tab.id);
+  }
+});
+
+
 // Listener for alarm events
 browser.alarms.onAlarm.addListener(handleAlarm);
