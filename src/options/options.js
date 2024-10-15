@@ -56,7 +56,7 @@ function populateStars() {
         const blockedSites = await getFromStorage('blockedSites', new Map());
         const rules = Array.from(blockedSites.keys());
         const reasons = await getFromStorage('tempUnblockReasons', new Map());
-        accordionContainer.innerHTML = ''; // Clear existing items
+        accordionContainer.innerHTML = '';
 
         if (rules.length === 0) {
             accordionContainer.innerHTML = '<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" disabled>No rules found</button></h2></div>';
@@ -93,11 +93,10 @@ function populateStars() {
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-pattern', pattern);
 
-            removeButton.addEventListener('click', function(event) {
+            removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const buttonPattern = removeButton.getAttribute('data-pattern');
-                console.log('Removing rule:', buttonPattern);
-                sendPermUnblockMessage(buttonPattern);
+                if (await sendBackgroundMessage('permUnblock', buttonPattern)) populateAccordion();
             });
 
             // Append the remove button and text to the button wrapper
@@ -159,8 +158,18 @@ function populateStars() {
     async function populateTempUnblocks() {
         const urls = await getFromStorage('tempUnblocks', new Map());
         const unblockList = Array.from(urls.keys());
-        const tempUnblockList = document.getElementById('temp-unblock-list');
-        tempUnblockList.innerHTML = '';
+        const tempUnblockListElement = document.getElementById('temp-unblock-list');
+        tempUnblockListElement.innerHTML = '';
+
+        if (unblockList.length === 0) {
+            tempUnblockListElement.innerHTML = '<li class="temp-list-item list-group-item text-start"></li>';
+            tempUnblockListElement.firstChild.id = 'no-temp-unblocks';
+            const heading = document.createElement('h2');
+            heading.classList.add("temp-unblock-heading");
+            heading.textContent = 'No temporary unblocks found';
+            tempUnblockListElement.firstChild.appendChild(heading);
+            return;
+        }
         // add the urls to the list
         unblockList.forEach(url => {
             const listItem = document.createElement('li');
@@ -170,16 +179,16 @@ function populateStars() {
             heading.classList.add("temp-unblock-heading");
             heading.textContent = url;
             listItem.appendChild(heading);
-            tempUnblockList.appendChild(listItem);
+            tempUnblockListElement.appendChild(listItem);
             // add the remove temp unblock button
             const removeButton = document.createElement('button');
             removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-url', url);
-            removeButton.addEventListener('click', function(event) {
+            removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const url = removeButton.getAttribute('data-url');
-                sendRemoveTempUnblockMessage(url);
+                if (await sendBackgroundMessage('removeTempUnblock', url)) populateTempUnblocks();
             });
             listItem.appendChild(removeButton);
         });
@@ -238,48 +247,33 @@ function populateStars() {
         alert('Redirect URL removed successfully!');
     });
 
-    async function sendRemoveTempUnblockMessage(url) {
-        const inputPassphrase = prompt('Enter your passphrase to remove the rule');
-        if (!inputPassphrase) {
-            return;
-        }
-        hashString(inputPassphrase).then(hashedPassphrase => {
-            browser.runtime.sendMessage({
-                action: 'removeTempUnblock',
-                passphrase: hashedPassphrase,
-                url: url
-            }).then(response => {
-                if (response.status === 'success') {
-                    populateTempUnblocks();
-                } else {
-                    alert(response.message);
-                }
-            })
-        }).catch(error => {
-            console.error('Error in hashing password:', error);
-        });
-    }
 
-    async function sendPermUnblockMessage(pattern) {
+    async function sendBackgroundMessage(action, pattern) {
+        if (!await getFromStorage('Passphrase')) {
+            alert('Please set a passphrase in the extension options page');
+            return false;
+        }
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
         if (!inputPassphrase) {
-            return;
+            return false;
         }
-        hashString(inputPassphrase).then(hashedPassphrase => {
-            browser.runtime.sendMessage({
-                action: 'permUnblock',
+        try {
+            const hashedPassphrase = await hashString(inputPassphrase);
+            const response = await browser.runtime.sendMessage({
+                action: action,
                 passphrase: hashedPassphrase,
                 pattern: pattern
-            }).then(response => {
-                if (response.status === 'success') {
-                    populateAccordion();
-                } else {
-                    alert(response.message);
-                }
-            })
-        }).catch(error => {
-            console.error('Error in hashing password:', error);
-        });
+            });
+            if (response && response.status === 'success') {
+                return true;
+            } else {
+                alert(response ? response.message : 'Unknown error occurred');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error in sending message:', error);
+            return false;
+        }
     }
 
     async function serialiseBlockedSites() {

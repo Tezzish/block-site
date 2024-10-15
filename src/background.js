@@ -39,7 +39,6 @@ async function removeTempUnblockFromStorage(url) {
  */
 async function isBlocked(url) {
   const isTempUnblocked = await isTemporarilyUnblocked(url);
-  console.log("isTempUnblocked:", isTempUnblocked);
   if (isTempUnblocked) {
     return false;
   }
@@ -73,8 +72,49 @@ async function redirectIfBlocked(url) {
       const encodedUrl = encodeURIComponent(url);
       const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
       browser.tabs.update({ url: blockedPageUrl });
+      return true;
     }
   });
+  return false;
+}
+
+async function redirectIfUnblocked(url) {
+  // if it's not an extension page, return
+  if (!url.startsWith("moz-extension")) {
+    return false;
+  }
+  const urlObj = new URL(url);
+  // get the encoded url from the query string
+  const urlParams = new URLSearchParams(urlObj.search);
+  const blockedUrl = urlParams.get('blockedUrl');
+  if (!blockedUrl) {
+    console.error("Blocked URL not found in query string");
+    return;
+  }
+  const decodedUrl = decodeURIComponent(blockedUrl);
+  // if not blocked, redirect to the original URL
+  if (!await isBlocked(decodedUrl)) {
+    browser.tabs.update({ url: decodedUrl });
+  }
+  return true;
+}
+
+async function blockSite(url) {
+  const pattern = processUrl(url);
+  const urlObj = new URL(url);
+  if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
+    return;
+  }
+  if (urlObj.hostname === '') {
+    return;
+  }
+  const blockedSites = await getFromStorage('blockedSites', new Map());
+  console.log(blockedSites);
+  if (blockedSites.has(pattern)) {
+    return;
+  }
+  blockedSites.set(pattern, Date.now());
+  await setInStorage('blockedSites', blockedSites);
 }
 
 // Temporary Unblock Functions
@@ -160,14 +200,17 @@ async function removeTempUnblock(message, sender) {
     if (message.passphrase !== password) {
       return { status: "error", message: "Incorrect passphrase" };
     }
-    const url = message.url;
+    const url = message.pattern;
     const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
     if (tempUnblocks.delete(url)) {
       await setInStorage('tempUnblocks', tempUnblocks);
       await browser.alarms.clear(url);
+      return { status: "success", message: "Temporary unblock removed" };
     }
+    return { status: "error", message: "URL not found in temporary unblocks" };
   } catch (error) {
     console.error("Error in removeTempUnblock:", error);
+    return { status: "error", message: "An error occurred while removing the temporary unblock" };
   }
 }
 
@@ -184,6 +227,9 @@ async function removeTempUnblock(message, sender) {
 async function handlePermUnblock(message, sender) {
   try {
     const storedPassphrase = await getFromStorage("Passphrase");
+    if (!storedPassphrase) {
+      return { status: "error", message: "Passphrase not set" };
+    }
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
@@ -228,12 +274,19 @@ async function removeFromBlockedSites(pattern) {
  */
 function handleAlarm(alarm) {
   const pattern = alarm.name;
+  console.log("Alarm triggered for pattern:", pattern);
 
   getFromStorage('tempUnblocks', new Map())
     .then(tempUnblocks => {
-      if (tempUnblocks.has(pattern)) {  
+      console.log("Retrieved tempUnblocks:", tempUnblocks);
+      if (tempUnblocks.has(pattern)) {
+        console.log("Pattern found in tempUnblocks:", pattern);
         tempUnblocks.delete(pattern);
+        console.log("Pattern deleted from tempUnblocks:", pattern);
+        console.log("Updated tempUnblocks:", tempUnblocks.keys());
         return setInStorage('tempUnblocks', tempUnblocks);
+      } else {
+        console.log("Pattern not found in tempUnblocks:", pattern);
       }
     })
     .catch(error => {
@@ -246,8 +299,24 @@ function handleAlarm(alarm) {
 
 // Listener for tab updates to redirect if the URL changes
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  //if starts with moz-extension and ends with options.html, return
+  if (tab.url) {
+    if (tab.url.startsWith("moz-extension") && tab.url.endsWith("options.html")) {
+      console.log("Options page opened");
+      return;
+    }
+  }
   if (changeInfo.url) {
-    redirectIfBlocked(changeInfo.url);
+    redirectIfBlocked(changeInfo.url).then(isBlocked => {
+      if (isBlocked) return true;
+      return redirectIfUnblocked(changeInfo.url);
+    }).then(isUnblocked => {
+      if (isUnblocked) return true;
+      return false;
+    }).catch(error => {
+      console.error("Error in tab update listener:", error);
+      return false;
+    });
   }
 });
 
@@ -255,29 +324,75 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "tempUnblock") {
     handleTempUnblock(message, sender)
-      .then(sendResponse)
+      .then(() => {
+        sendResponse({ status: "success", message: "Temporary unblock processed" });
+        console.log('Temporary unblock processed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "handletemp" });
+        console.error("Error in handleTempUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in handleTempUnblock" });
       });
-    return true;
+    return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "permUnblock") {
     handlePermUnblock(message, sender)
-      .then(sendResponse)
+      .then(() => {
+        sendResponse({ status: "success", message: "Permanent unblock processed" });
+        console.log('Permanent unblock processed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "perm" });
+        console.error("Error in handlePermUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in handlePermUnblock" });
       });
-    return true;
+    return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "removeTempUnblock") {
-    removeTempUnblock(message, sender).
-      then(sendResponse)
+    removeTempUnblock(message, sender)
+      .then(() => {
+        sendResponse({ status: "success", message: "Temporary unblock removed" });
+        console.log('Temporary unblock removed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
+        console.error("Error in removeTempUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in removeTempUnblock" });
       });
+    return true; // Indicates that the response will be sent asynchronously
+  } else if (message.action === "blockSite") {
+    blockSite(message.pattern)
+      .then(() => {
+        sendResponse({ status: "success", message: "Site blocked" });
+        console.log("Site blocked");
+      })
+      .catch(error => {
+        console.error("Error in blockSite:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in blockSite" });
+      });
+    return true; // Indicates that the response will be sent asynchronously
+  } else {
+    sendResponse({ status: "error", message: "Invalid action" });
   }
 });
+
+// Add blocking on the context menu
+browser.contextMenus.create(
+  {
+    id: "block-site",
+    title: "Block this site",
+    contexts: ["all"],
+  },
+  () => {
+    if (browser.runtime.lastError) {
+      console.error("Error creating context menu item:", browser.runtime.lastError);
+    }
+  },
+);
+
+browser.contextMenus.onClicked.addListener(async (info, tab) => {
+  switch (info.menuItemId) {
+    case "block-site":
+      await blockSite(tab.url);
+      browser.tabs.reload(tab.id);
+  }
+});
+
 
 // Listener for alarm events
 browser.alarms.onAlarm.addListener(handleAlarm);
