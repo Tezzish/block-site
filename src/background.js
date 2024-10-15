@@ -200,7 +200,7 @@ async function removeTempUnblock(message, sender) {
     if (message.passphrase !== password) {
       return { status: "error", message: "Incorrect passphrase" };
     }
-    const url = message.url;
+    const url = message.pattern;
     const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
     if (tempUnblocks.delete(url)) {
       await setInStorage('tempUnblocks', tempUnblocks);
@@ -227,6 +227,9 @@ async function removeTempUnblock(message, sender) {
 async function handlePermUnblock(message, sender) {
   try {
     const storedPassphrase = await getFromStorage("Passphrase");
+    if (!storedPassphrase) {
+      return { status: "error", message: "Passphrase not set" };
+    }
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
@@ -321,27 +324,37 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "tempUnblock") {
     handleTempUnblock(message, sender)
-      .then(sendResponse)
+      .then(() => {
+        sendResponse({ status: "success", message: "Temporary unblock processed" });
+        console.log('Temporary unblock processed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "handletemp" });
+        console.error("Error in handleTempUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in handleTempUnblock" });
       });
-    return true;
+    return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "permUnblock") {
     handlePermUnblock(message, sender)
-      .then(sendResponse)
+      .then(() => {
+        sendResponse({ status: "success", message: "Permanent unblock processed" });
+        console.log('Permanent unblock processed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "perm" });
+        console.error("Error in handlePermUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in handlePermUnblock" });
       });
-    return true;
+    return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "removeTempUnblock") {
     removeTempUnblock(message, sender)
-      .then(sendResponse)
+      .then(() => {
+        sendResponse({ status: "success", message: "Temporary unblock removed" });
+        console.log('Temporary unblock removed');
+      })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
+        console.error("Error in removeTempUnblock:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in removeTempUnblock" });
       });
+    return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "blockSite") {
     blockSite(message.pattern)
       .then(() => {
@@ -349,12 +362,13 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.log("Site blocked");
       })
       .catch(error => {
-        console.error("Error in message listener:", error);
-        sendResponse({ status: "error", message: "An unexpected error occurred" });
+        console.error("Error in blockSite:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred in blockSite" });
       });
-    return true;
+    return true; // Indicates that the response will be sent asynchronously
+  } else {
+    sendResponse({ status: "error", message: "Invalid action" });
   }
-  return true;
 });
 
 // Add blocking on the context menu

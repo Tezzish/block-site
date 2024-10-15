@@ -56,7 +56,7 @@ function populateStars() {
         const blockedSites = await getFromStorage('blockedSites', new Map());
         const rules = Array.from(blockedSites.keys());
         const reasons = await getFromStorage('tempUnblockReasons', new Map());
-        accordionContainer.innerHTML = ''; // Clear existing items
+        accordionContainer.innerHTML = '';
 
         if (rules.length === 0) {
             accordionContainer.innerHTML = '<div class="accordion-item"><h2 class="accordion-header"><button class="accordion-button" type="button" disabled>No rules found</button></h2></div>';
@@ -93,11 +93,10 @@ function populateStars() {
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
             removeButton.setAttribute('data-pattern', pattern);
 
-            removeButton.addEventListener('click', function(event) {
+            removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const buttonPattern = removeButton.getAttribute('data-pattern');
-                console.log('Removing rule:', buttonPattern);
-                sendPermUnblockMessage(buttonPattern);
+                if (await sendBackgroundMessage('permUnblock', buttonPattern)) populateAccordion();
             });
 
             // Append the remove button and text to the button wrapper
@@ -189,12 +188,7 @@ function populateStars() {
             removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const url = removeButton.getAttribute('data-url');
-                try {
-                    await sendRemoveTempUnblockMessage(url);
-                    populateTempUnblocks();
-                } catch (error) {
-                    console.error("Error removing temporary unblock:", error);
-                }
+                if (await sendBackgroundMessage('removeTempUnblock', url)) populateTempUnblocks();
             });
             listItem.appendChild(removeButton);
         });
@@ -253,48 +247,33 @@ function populateStars() {
         alert('Redirect URL removed successfully!');
     });
 
-    async function sendRemoveTempUnblockMessage(url) {
-        const inputPassphrase = prompt('Enter your passphrase to remove the rule');
-        if (!inputPassphrase) {
-            return;
-        }
-        hashString(inputPassphrase).then(hashedPassphrase => {
-            browser.runtime.sendMessage({
-                action: 'removeTempUnblock',
-                passphrase: hashedPassphrase,
-                url: url
-            }).then(response => {
-                if (response.status === 'success') {
-                    populateTempUnblocks();
-                } else {
-                    alert(response.message);
-                }
-            })
-        }).catch(error => {
-            console.error('Error in hashing password:', error);
-        });
-    }
 
-    async function sendPermUnblockMessage(pattern) {
+    async function sendBackgroundMessage(action, pattern) {
+        if (!await getFromStorage('Passphrase')) {
+            alert('Please set a passphrase in the extension options page');
+            return false;
+        }
         const inputPassphrase = prompt('Enter your passphrase to remove the rule');
         if (!inputPassphrase) {
-            return;
+            return false;
         }
-        hashString(inputPassphrase).then(hashedPassphrase => {
-            browser.runtime.sendMessage({
-                action: 'permUnblock',
+        try {
+            const hashedPassphrase = await hashString(inputPassphrase);
+            const response = await browser.runtime.sendMessage({
+                action: action,
                 passphrase: hashedPassphrase,
                 pattern: pattern
-            }).then(response => {
-                if (response.status === 'success') {
-                    populateAccordion();
-                } else {
-                    alert(response.message);
-                }
-            })
-        }).catch(error => {
-            console.error('Error in hashing password:', error);
-        });
+            });
+            if (response && response.status === 'success') {
+                return true;
+            } else {
+                alert(response ? response.message : 'Unknown error occurred');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error in sending message:', error);
+            return false;
+        }
     }
 
     async function serialiseBlockedSites() {
