@@ -99,6 +99,24 @@ async function redirectIfUnblocked(url) {
   return true;
 }
 
+async function blockSite(url) {
+  const pattern = processUrl(url);
+  const urlObj = new URL(url);
+  if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
+    return;
+  }
+  if (urlObj.hostname === '') {
+    return;
+  }
+  const blockedSites = await getFromStorage('blockedSites', new Map());
+  console.log(blockedSites);
+  if (blockedSites.has(pattern)) {
+    return;
+  }
+  blockedSites.set(pattern, Date.now());
+  await setInStorage('blockedSites', blockedSites);
+}
+
 // Temporary Unblock Functions
 // ---------------------------
 
@@ -324,6 +342,17 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.error("Error in message listener:", error);
         sendResponse({ status: "error", message: "An unexpected error occurred" + "temp" });
       });
+  } else if (message.action === "blockSite") {
+    blockSite(message.pattern)
+      .then(() => {
+        sendResponse({ status: "success", message: "Site blocked" });
+        console.log("Site blocked");
+      })
+      .catch(error => {
+        console.error("Error in message listener:", error);
+        sendResponse({ status: "error", message: "An unexpected error occurred" });
+      });
+    return true;
   }
   return true;
 });
@@ -345,18 +374,7 @@ browser.contextMenus.create(
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
     case "block-site":
-      const pattern = processUrl(tab.url);
-      if (tab.url.includes('moz-extension://')) {
-        return;
-      }
-
-      const blockedSites = await getFromStorage('blockedSites', new Map());
-      console.log(blockedSites);
-      if (blockedSites.has(pattern)) {
-        return;
-      }
-      blockedSites.set(pattern, Date.now());
-      await setInStorage('blockedSites', blockedSites);
+      await blockSite(tab.url);
       browser.tabs.reload(tab.id);
   }
 });

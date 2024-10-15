@@ -15,20 +15,16 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Event} event - The click event.
      */
     document.getElementById('addSite').addEventListener('click', async () => {
-    
-        // we should not be able to block the extenion's own pages
-        if (activeTab.url.includes('moz-extension://')) {
-          return;
+      browser.runtime.sendMessage({
+        action: "blockSite",
+        pattern: activeTab.url
+      }).then(response => {
+        if (response.status === 'success') {
+          browser.tabs.reload(activeTab.id);
+        } else {
+          alert(response.message);
         }
-
-        const blockedSites = await getFromStorage('blockedSites', new Map());
-        console.log(blockedSites);
-        if (blockedSites.has(pattern)) {
-          return;
-        }
-        blockedSites.set(pattern, Date.now());
-        await setInStorage('blockedSites', blockedSites);
-        browser.tabs.reload(activeTab.id);
+      })
     });
   });
 
