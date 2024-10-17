@@ -171,16 +171,16 @@ function populateStars() {
             return;
         }
         // add the urls to the list
-        unblockList.forEach(url => {
+        for (const [url, date] of urls.entries()) {
             const listItem = document.createElement('li');
-            listItem.classList.add('temp-list-item');
-            listItem.classList.add('list-group-item');
+            listItem.classList.add('temp-list-item', 'list-group-item');
+            const unblockDate = new Date(date);
+            const unblockTime = unblockDate.toLocaleString();
             const heading = document.createElement('h2');
             heading.classList.add("temp-unblock-heading");
-            heading.textContent = url;
+            heading.textContent = `${url} (Unblocks at: ${unblockTime})`;
             listItem.appendChild(heading);
             tempUnblockListElement.appendChild(listItem);
-            // add the remove temp unblock button
             const removeButton = document.createElement('button');
             removeButton.classList.add('btn', 'btn-danger', 'remove-temp-unblock-btn');
             removeButton.innerHTML = '<i class="bi bi-trash"></i>';
@@ -191,7 +191,7 @@ function populateStars() {
                 if (await sendBackgroundMessage('removeTempUnblock', url)) populateTempUnblocks();
             });
             listItem.appendChild(removeButton);
-        });
+        }
         return;
     }
 
