@@ -109,7 +109,6 @@ async function blockSite(url) {
     return;
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
-  console.log(blockedSites);
   if (blockedSites.has(pattern)) {
     return;
   }
@@ -264,36 +263,6 @@ async function removeFromBlockedSites(pattern) {
   }
 }
 
-// Alarm Handling
-// --------------
-
-/**
- * Handles the alarm event to remove expired temporary unblocks.
- *
- * @param {object} alarm - The alarm object.
- */
-function handleAlarm(alarm) {
-  const pattern = alarm.name;
-  console.log("Alarm triggered for pattern:", pattern);
-
-  getFromStorage('tempUnblocks', new Map())
-    .then(tempUnblocks => {
-      console.log("Retrieved tempUnblocks:", tempUnblocks);
-      if (tempUnblocks.has(pattern)) {
-        console.log("Pattern found in tempUnblocks:", pattern);
-        tempUnblocks.delete(pattern);
-        console.log("Pattern deleted from tempUnblocks:", pattern);
-        console.log("Updated tempUnblocks:", tempUnblocks.keys());
-        return setInStorage('tempUnblocks', tempUnblocks);
-      } else {
-        console.log("Pattern not found in tempUnblocks:", pattern);
-      }
-    })
-    .catch(error => {
-      console.error("Error in handleAlarm:", error);
-    });
-}
-
 // Event Listeners
 // ---------------
 
@@ -302,7 +271,6 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   //if starts with moz-extension and ends with options.html, return
   if (tab.url) {
     if (tab.url.startsWith("moz-extension") && tab.url.endsWith("options.html")) {
-      console.log("Options page opened");
       return;
     }
   }
@@ -326,7 +294,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleTempUnblock(message, sender)
       .then(() => {
         sendResponse({ status: "success", message: "Temporary unblock processed" });
-        console.log('Temporary unblock processed');
       })
       .catch(error => {
         console.error("Error in handleTempUnblock:", error);
@@ -337,7 +304,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handlePermUnblock(message, sender)
       .then(() => {
         sendResponse({ status: "success", message: "Permanent unblock processed" });
-        console.log('Permanent unblock processed');
       })
       .catch(error => {
         console.error("Error in handlePermUnblock:", error);
@@ -348,7 +314,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     removeTempUnblock(message, sender)
       .then(() => {
         sendResponse({ status: "success", message: "Temporary unblock removed" });
-        console.log('Temporary unblock removed');
       })
       .catch(error => {
         console.error("Error in removeTempUnblock:", error);
@@ -359,7 +324,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
     blockSite(message.pattern)
       .then(() => {
         sendResponse({ status: "success", message: "Site blocked" });
-        console.log("Site blocked");
       })
       .catch(error => {
         console.error("Error in blockSite:", error);
@@ -392,7 +356,3 @@ browser.contextMenus.onClicked.addListener(async (info, tab) => {
       browser.tabs.reload(tab.id);
   }
 });
-
-
-// Listener for alarm events
-browser.alarms.onAlarm.addListener(handleAlarm);
