@@ -14,11 +14,6 @@ async function isTemporarilyUnblocked(url) {
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
   if (tempUnblocks.has(pattern)) {
     const expiryTime = tempUnblocks.get(pattern);
-    // TODO: Move this functionlity to the removeTempUnblockFromStorage function
-    if (expiryTime && expiryTime < Date.now()) {
-      await removeTempUnblockFromStorage(pattern);
-      return false;
-    }
     return expiryTime && expiryTime > Date.now();
   }
   return false;
@@ -172,6 +167,12 @@ async function addToTempUnblocked(url, duration) {
     console.error("Error in addToTempUnblocked:", error);
   }
 }
+
+browser.alarms.onAlarm.addListener(async alarm => {
+  if (alarm.name.startsWith("http")) {
+    await removeTempUnblockFromStorage(alarm.name);
+  }
+});
 
 /**
  * Adds a temporary unblock reason to the list of reasons.
