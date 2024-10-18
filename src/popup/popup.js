@@ -1,4 +1,4 @@
-import { getFromStorage, setInStorage, processUrl } from "../utils/utils.js";
+import { processUrl } from "../utils/utils.js";
 //when dom loads
 
 document.addEventListener('DOMContentLoaded', function() {

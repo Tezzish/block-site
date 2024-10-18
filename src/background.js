@@ -14,6 +14,7 @@ async function isTemporarilyUnblocked(url) {
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
   if (tempUnblocks.has(pattern)) {
     const expiryTime = tempUnblocks.get(pattern);
+    // TODO: Move this functionlity to the removeTempUnblockFromStorage function
     if (expiryTime && expiryTime < Date.now()) {
       await removeTempUnblockFromStorage(pattern);
       return false;
@@ -61,42 +62,41 @@ async function isRedirect() {
  *
  * @param {string} url - The URL of the current tab.
  */
-async function redirectIfBlocked(url) {
+async function redirectIfBlocked(tabId, url) {
   const redirectUrl = await isRedirect();
   isBlocked(url).then(isBlocked => {
-    if (isBlocked) {
-      if (redirectUrl) {
-        browser.tabs.update({ url: redirectUrl.href });
-        return;
-      }
-      const encodedUrl = encodeURIComponent(url);
-      const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
-      browser.tabs.update({ url: blockedPageUrl });
+  if (isBlocked) {
+    if (redirectUrl) {
+      browser.tabs.update(tabId, { url: redirectUrl.href });
       return true;
     }
+    const encodedUrl = encodeURIComponent(url);
+    const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
+    browser.tabs.update(tabId, { url: blockedPageUrl });
+    return true;
+  }
+  return false;
   });
   return false;
 }
 
-async function redirectIfUnblocked(url) {
-  // if it's not an extension page, return
+async function redirectBlockedToUnblocked(tabId, url) {
   if (!url.startsWith("moz-extension")) {
     return false;
   }
   const urlObj = new URL(url);
-  // get the encoded url from the query string
   const urlParams = new URLSearchParams(urlObj.search);
   const blockedUrl = urlParams.get('blockedUrl');
   if (!blockedUrl) {
     console.error("Blocked URL not found in query string");
-    return;
+    return false;
   }
   const decodedUrl = decodeURIComponent(blockedUrl);
-  // if not blocked, redirect to the original URL
   if (!await isBlocked(decodedUrl)) {
-    browser.tabs.update({ url: decodedUrl });
+    browser.tabs.update(tabId, { url: decodedUrl });
+    return true;
   }
-  return true;
+  return false;
 }
 
 async function blockSite(url) {
@@ -268,23 +268,28 @@ async function removeFromBlockedSites(pattern) {
 
 // Listener for tab updates to redirect if the URL changes
 browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  //if starts with moz-extension and ends with options.html, return
+  // Check if the tab URL is defined and not the options page
   if (tab.url) {
     if (tab.url.startsWith("moz-extension") && tab.url.endsWith("options.html")) {
       return;
     }
   }
   if (changeInfo.url) {
-    redirectIfBlocked(changeInfo.url).then(isBlocked => {
-      if (isBlocked) return true;
-      return redirectIfUnblocked(changeInfo.url);
-    }).then(isUnblocked => {
-      if (isUnblocked) return true;
-      return false;
-    }).catch(error => {
-      console.error("Error in tab update listener:", error);
-      return false;
-    });
+    redirectIfBlocked(tabId, changeInfo.url)
+      .then(isBlocked => {
+        if (!isBlocked) {
+          return redirectBlockedToUnblocked(tab, changeInfo.url);
+        }
+        return isBlocked;
+      })
+      .then(isUnblocked => {
+        if (isUnblocked) {
+          console.log("URL was unblocked and redirected");
+        }
+      })
+      .catch(error => {
+        console.error("Error in tab update listener:", error);
+      });
   }
 });
 
