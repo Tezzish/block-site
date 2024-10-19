@@ -40,7 +40,9 @@ async function isBlocked(url) {
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
   const pattern = processUrl(url);
-  return blockedSites.has(pattern);
+  console.log("Blocked Sites: ", blockedSites);
+  console.log("Url: ", url);
+  return blockedSites.has(pattern) || blockedSites.has(url);
 }
 
 async function isRedirect() {
@@ -95,7 +97,8 @@ async function redirectBlockedToUnblocked(tabId, url) {
 }
 
 async function blockSite(url) {
-  const pattern = processUrl(url);
+  // const pattern = processUrl(url);
+  const pattern = url;
   const urlObj = new URL(url);
   if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
     return;

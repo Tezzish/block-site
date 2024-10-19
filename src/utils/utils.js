@@ -22,3 +22,12 @@ export function processUrl(url) {
     const urlObj = new URL(url);
     return `*://*.${urlObj.hostname}/*`;
   }
+
+export function checkUrlValidity(url) {
+    try {
+        new URL(url);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
