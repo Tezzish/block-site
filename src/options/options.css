@@ -158,6 +158,10 @@ input {
     margin: 1%;
 }
 
+.form-control {
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif
+}
+
 #set-password-div {
     margin-bottom: 16px;
 }

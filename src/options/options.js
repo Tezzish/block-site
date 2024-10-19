@@ -1,9 +1,10 @@
-import { hashString, getFromStorage, setInStorage } from '../utils/utils.js';
+import { hashString, getFromStorage, setInStorage, checkUrlValidity } from '../utils/utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const accordionContainer = document.querySelector('#unblock-rules-accordion');
     const passwordForm = document.getElementById('password-form');
     const passwordInput = document.getElementById('password');
+    const customRuleForm = document.getElementById('custom-rule-form');
 
     // Function to add twinkling stars to the top 20% of the page
 function populateStars() {
@@ -96,7 +97,8 @@ function populateStars() {
             removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const buttonPattern = removeButton.getAttribute('data-pattern');
-                if (await sendBackgroundMessage('permUnblock', buttonPattern)) populateAccordion();
+                const hashedPassphrase = await inputPassword();
+                if (await sendBackgroundMessage('permUnblock', buttonPattern, hashedPassphrase)) populateAccordion();
             });
 
             // Append the remove button and text to the button wrapper
@@ -155,6 +157,8 @@ function populateStars() {
         });
     }
 
+    populateAccordion();
+
     async function populateTempUnblocks() {
         const urls = await getFromStorage('tempUnblocks', new Map());
         const unblockList = Array.from(urls.keys());
@@ -188,7 +192,8 @@ function populateStars() {
             removeButton.addEventListener('click', async function(event) {
                 event.preventDefault();
                 const url = removeButton.getAttribute('data-url');
-                if (await sendBackgroundMessage('removeTempUnblock', url)) populateTempUnblocks();
+                const hashedPassphrase = await inputPassword();
+                if (await sendBackgroundMessage('removeTempUnblock', url, hashedPassphrase)) populateTempUnblocks();
             });
             listItem.appendChild(removeButton);
         }
@@ -197,13 +202,30 @@ function populateStars() {
 
     populateTempUnblocks();
 
+    customRuleForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const pattern = document.getElementById('custom-rule').value;
+        if (pattern) {
+            if (checkUrlValidity(pattern)) {
+                if (await sendBackgroundMessage('blockSite', new URL(pattern).toString())) {
+                    populateAccordion();
+                    document.getElementById('custom-rule').value = '';
+                }
+            } else {
+                alert(pattern + ' is not a valid URL.');
+            }
+        } else {
+            alert('Please enter a URL.');
+        }
+    });
+
     // Add event listener to the password form
     passwordForm.addEventListener('submit', function(event) {
         event.preventDefault();
         const password = passwordInput.value;
         if (password) {
             hashString(password).then(hashedPassphrase => {
-                setInStorage('Passphrase', hashedPassphrase);
+                setInStorage('passphrase', hashedPassphrase);
             }).catch(error => {
                 console.error('Error in hashing password:', error);
             });
@@ -213,15 +235,6 @@ function populateStars() {
             alert('Please enter a password.');
         }
     });
-
-    function checkUrlValidity(url) {
-        try {
-            new URL(url);
-            return true;
-        } catch (error) {
-            return false;
-        }
-    }
 
     const redirectForm = document.getElementById('redirect-url-form');
     redirectForm.addEventListener('submit', function(event) {
@@ -247,9 +260,8 @@ function populateStars() {
         alert('Redirect URL removed successfully!');
     });
 
-
-    async function sendBackgroundMessage(action, pattern) {
-        if (!await getFromStorage('Passphrase')) {
+    async function inputPassword() {
+        if (!await getFromStorage('passphrase')) {
             alert('Please set a passphrase in the extension options page');
             return false;
         }
@@ -257,8 +269,11 @@ function populateStars() {
         if (!inputPassphrase) {
             return false;
         }
+        return await hashString(inputPassphrase);
+    }
+    
+    async function sendBackgroundMessage(action, pattern, hashedPassphrase) {
         try {
-            const hashedPassphrase = await hashString(inputPassphrase);
             const response = await browser.runtime.sendMessage({
                 action: action,
                 passphrase: hashedPassphrase,
@@ -334,5 +349,4 @@ function populateStars() {
     exportButton.addEventListener('click', serialiseBlockedSites);
     importButton.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', deserialiseBlockedSites);
-    populateAccordion();
 });

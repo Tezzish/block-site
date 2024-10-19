@@ -22,3 +22,15 @@ export function processUrl(url) {
     const urlObj = new URL(url);
     return `*://*.${urlObj.hostname}/*`;
   }
+
+export function checkUrlValidity(url) {
+    if (url.startsWith("about:") || url.startsWith("moz-extension:")) {
+        return false;
+    }
+    try {
+        new URL(url);
+        return true;
+    } catch (error) {
+        return false;
+    }
+}

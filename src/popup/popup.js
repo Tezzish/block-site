@@ -1,23 +1,41 @@
-import { processUrl } from "../utils/utils.js";
-//when dom loads
+import { processUrl, checkUrlValidity } from "../utils/utils.js";
 
 document.addEventListener('DOMContentLoaded', function() {
   browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const activeTab = tabs[0];
-    const pattern = processUrl(new URL(activeTab.url));
-    const docPattern = document.getElementById('pattern');
-    docPattern.textContent = pattern;
+    const title = document.createElement('h1');
+    const blockContainer = document.getElementById('block-container');
+    if (!activeTab || activeTab.url === undefined) return;
+    title.classList.add("text-white");
+    if (activeTab.url.startsWith("about:") || activeTab.url.startsWith("moz-extension:")) {
+      title.textContent = "Cannot block this page";
+      blockContainer.insertBefore(title, blockContainer.lastElementChild);
+      return;
+    }
+    title.textContent = "Add Site to Block List";
 
-      /**
-     * Adds a site to the list of blocked sites.
-     * The list is stored in the extension's local storage.
-     * 
-     * @param {Event} event - The click event.
-     */
-    document.getElementById('addSite').addEventListener('click', async () => {
+    const patternElem = document.createElement('h4');
+    patternElem.id = "pattern";
+    patternElem.textContent = "Pattern: ";
+    patternElem.className = "text-white";
+
+    const pattern = processUrl(new URL(activeTab.url));
+    patternElem.textContent += pattern;
+
+    const blockButton = document.createElement('button');
+    blockButton.id = "addSite";
+    blockButton.className = "btn btn-danger";
+    blockButton.textContent = "Block";
+
+    blockButton.addEventListener('click', async () => {
+      console.log("Adding site to blocked list" + pattern);
+      if (!checkUrlValidity(activeTab.url)) {
+        alert('Invalid URL');
+        return;
+      }
       browser.runtime.sendMessage({
         action: "blockSite",
-        pattern: activeTab.url
+        pattern: processUrl(activeTab.url)
       }).then(response => {
         if (response.status === 'success') {
           browser.tabs.reload(activeTab.id);
@@ -26,6 +44,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
     });
+    console.log(blockContainer.lastElementChild);
+    blockContainer.insertBefore(title, blockContainer.lastElementChild);
+    blockContainer.insertBefore(patternElem, blockContainer.lastElementChild);
+    blockContainer.insertBefore(blockButton, blockContainer.lastElementChild);
   });
 
     const optionsLink = document.getElementById('options-link');
