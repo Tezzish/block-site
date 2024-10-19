@@ -1,4 +1,4 @@
-import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
+import { getFromStorage, setInStorage, processUrl, checkUrlValidity } from './utils/utils.js';
 
 // Utility Functions
 // -----------------
@@ -41,7 +41,8 @@ async function isBlocked(url) {
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
   const pattern = processUrl(url);
-  return blockedSites.has(pattern) || blockedSites.has(url);
+  if (pattern === undefined) return;
+  else return blockedSites.has(pattern) || blockedSites.has(url);
 }
 
 async function isRedirect() {
@@ -96,21 +97,25 @@ async function redirectBlockedToUnblocked(tabId, url) {
 }
 
 async function blockSite(url) {
-  // const pattern = processUrl(url);
   const pattern = url;
-  const urlObj = new URL(url);
-  if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
-    return;
+  if (!pattern) return;
+  try {
+    const urlObj = new URL(url);
+    if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
+      return;
+    }
+    if (urlObj.hostname === '') {
+      return;
+    }
+  } catch {} 
+  finally {
+    const blockedSites = await getFromStorage('blockedSites', new Map());
+    if (blockedSites.has(pattern)) {
+      return;
+    }
+    blockedSites.set(pattern, Date.now());
+    await setInStorage('blockedSites', blockedSites);
   }
-  if (urlObj.hostname === '') {
-    return;
-  }
-  const blockedSites = await getFromStorage('blockedSites', new Map());
-  if (blockedSites.has(pattern)) {
-    return;
-  }
-  blockedSites.set(pattern, Date.now());
-  await setInStorage('blockedSites', blockedSites);
 }
 
 // Temporary Unblock Functions
@@ -125,7 +130,7 @@ async function blockSite(url) {
  */
 async function handleTempUnblock(message, sender) {
   try {
-    const storedPassphrase = await getFromStorage("Passphrase");
+    const storedPassphrase = await getFromStorage("passphrase");
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
@@ -198,7 +203,7 @@ async function addToTempUnblockedReasons(url, reason, duration) {
 
 async function removeTempUnblock(message, sender) {
   try {
-    const password = await getFromStorage("Passphrase");
+    const password = await getFromStorage("passphrase");
     if (message.passphrase !== password) {
       return { status: "error", message: "Incorrect passphrase" };
     }
@@ -228,7 +233,7 @@ async function removeTempUnblock(message, sender) {
  */
 async function handlePermUnblock(message, sender) {
   try {
-    const storedPassphrase = await getFromStorage("Passphrase");
+    const storedPassphrase = await getFromStorage("passphrase");
     if (!storedPassphrase) {
       return { status: "error", message: "Passphrase not set" };
     }
@@ -355,7 +360,10 @@ browser.contextMenus.create(
 browser.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
     case "block-site":
-      await blockSite(tab.url);
+      if (!checkUrlValidity(tab.url)) {
+        return;
+      }
+      await blockSite(processUrl(tab.url));
       browser.tabs.reload(tab.id);
   }
 });

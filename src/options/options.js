@@ -225,7 +225,7 @@ function populateStars() {
         const password = passwordInput.value;
         if (password) {
             hashString(password).then(hashedPassphrase => {
-                setInStorage('Passphrase', hashedPassphrase);
+                setInStorage('passphrase', hashedPassphrase);
             }).catch(error => {
                 console.error('Error in hashing password:', error);
             });
@@ -261,7 +261,7 @@ function populateStars() {
     });
 
     async function inputPassword() {
-        if (!await getFromStorage('Passphrase')) {
+        if (!await getFromStorage('passphrase')) {
             alert('Please set a passphrase in the extension options page');
             return false;
         }
