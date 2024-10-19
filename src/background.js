@@ -12,6 +12,7 @@ import { getFromStorage, setInStorage, processUrl } from './utils/utils.js';
 async function isTemporarilyUnblocked(url) {
   const pattern = processUrl(url);  
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
+  console.log("Temp Unblocks: ", tempUnblocks);
   if (tempUnblocks.has(pattern)) {
     const expiryTime = tempUnblocks.get(pattern);
     return expiryTime && expiryTime > Date.now();
@@ -40,8 +41,6 @@ async function isBlocked(url) {
   }
   const blockedSites = await getFromStorage('blockedSites', new Map());
   const pattern = processUrl(url);
-  console.log("Blocked Sites: ", blockedSites);
-  console.log("Url: ", url);
   return blockedSites.has(pattern) || blockedSites.has(url);
 }
 
@@ -172,7 +171,7 @@ async function addToTempUnblocked(url, duration) {
 }
 
 browser.alarms.onAlarm.addListener(async alarm => {
-  if (alarm.name.startsWith("http")) {
+  if (alarm.name.includes("://")) {
     await removeTempUnblockFromStorage(alarm.name);
   }
 });
@@ -285,11 +284,6 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
           return redirectBlockedToUnblocked(tab, changeInfo.url);
         }
         return isBlocked;
-      })
-      .then(isUnblocked => {
-        if (isUnblocked) {
-          console.log("URL was unblocked and redirected");
-        }
       })
       .catch(error => {
         console.error("Error in tab update listener:", error);
