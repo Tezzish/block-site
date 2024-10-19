@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
   unblockRequestForm.addEventListener('submit', function(event) {
       event.preventDefault();
       // if there isn't a password in the storage, throw an error
-      getFromStorage('Passphrase').then(password => {
+      getFromStorage('passphrase').then(password => {
           if (!password) {
               alert('Passphrase not set, please set a passphrase in the extension options page');
               throw new Error('Passphrase not set');

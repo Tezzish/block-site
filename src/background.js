@@ -100,9 +100,6 @@ async function blockSite(url) {
   if (!pattern) return;
   try {
     const urlObj = new URL(url);
-    if (urlObj.protocol === 'moz-extension:' || urlObj.protocol === 'chrome-extension:') {
-      return;
-    }
     if (urlObj.hostname === '') {
       return;
     }
