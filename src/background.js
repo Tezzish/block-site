@@ -12,7 +12,6 @@ import { getFromStorage, setInStorage, processUrl, checkUrlValidity } from './ut
 async function isTemporarilyUnblocked(url) {
   const pattern = processUrl(url);  
   const tempUnblocks = await getFromStorage('tempUnblocks', new Map());
-  console.log("Temp Unblocks: ", tempUnblocks);
   if (tempUnblocks.has(pattern)) {
     const expiryTime = tempUnblocks.get(pattern);
     return expiryTime && expiryTime > Date.now();
@@ -286,7 +285,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     redirectIfBlocked(tabId, changeInfo.url)
       .then(isBlocked => {
         if (!isBlocked) {
-          return redirectBlockedToUnblocked(tab, changeInfo.url);
+          return redirectBlockedToUnblocked(tabId, changeInfo.url);
         }
         return isBlocked;
       })
