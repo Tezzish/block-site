@@ -197,7 +197,7 @@ async function addToTempUnblockedReasons(url, reason, duration) {
   }
 }
 
-async function removeTempUnblock(message, sender) {
+async function removeTempUnblock(message) {
   try {
     const password = await getFromStorage("passphrase");
     if (message.passphrase !== password) {
@@ -224,10 +224,9 @@ async function removeTempUnblock(message, sender) {
  * Handles the permanent unblock action.
  *
  * @param {object} message - The message object containing the action and reason.
- * @param {object} sender - The sender object containing the tab information.
  * @returns {Promise<object>} - A promise that resolves to the result of the unblock action.
  */
-async function handlePermUnblock(message, sender) {
+async function handlePermUnblock(message) {
   try {
     const storedPassphrase = await getFromStorage("passphrase");
     if (!storedPassphrase) {
@@ -293,7 +292,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 // Listener for messages sent from other parts of the extension
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((message, sendResponse, sender) => {
   if (message.action === "tempUnblock") {
     handleTempUnblock(message, sender)
       .then(() => {
@@ -305,7 +304,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "permUnblock") {
-    handlePermUnblock(message, sender)
+    handlePermUnblock(message)
       .then(() => {
         sendResponse({ status: "success", message: "Permanent unblock processed" });
       })
@@ -315,7 +314,7 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
       });
     return true; // Indicates that the response will be sent asynchronously
   } else if (message.action === "removeTempUnblock") {
-    removeTempUnblock(message, sender)
+    removeTempUnblock(message)
       .then(() => {
         sendResponse({ status: "success", message: "Temporary unblock removed" });
       })
