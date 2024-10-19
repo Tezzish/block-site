@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const blockContainer = document.getElementById('block-container');
     if (!activeTab || activeTab.url === undefined) return;
     title.classList.add("text-white");
-    if (activeTab.url.startsWith("about:") || activeTab.url.startsWith("moz-extension:")) {
+    if (!checkUrlValidity(activeTab.url)) {
       title.textContent = "Cannot block this page";
       blockContainer.insertBefore(title, blockContainer.lastElementChild);
       return;
@@ -29,10 +29,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     blockButton.addEventListener('click', async () => {
       console.log("Adding site to blocked list" + pattern);
-      if (!checkUrlValidity(activeTab.url)) {
-        alert('Invalid URL');
-        return;
-      }
       browser.runtime.sendMessage({
         action: "blockSite",
         pattern: processUrl(activeTab.url)
@@ -58,4 +54,3 @@ document.addEventListener('DOMContentLoaded', function() {
         browser.runtime.openOptionsPage();
   });
 });
-

@@ -24,7 +24,7 @@ export function processUrl(url) {
   }
 
 export function checkUrlValidity(url) {
-    if (url.startsWith("about:") || url.startsWith("moz-extension:")) {
+    if (!url.startsWith('http')) {
         return false;
     }
     try {
