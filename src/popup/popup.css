@@ -1,0 +1,26 @@
+@font-face {
+    font-family: "Stardew Valley";
+    src: url("../assets/fonts/Stardew_Valley.ttf") format("truetype");
+}
+
+body {
+    background-color:#2c2c2c;
+    height: 400px;
+    width: 400px;
+}
+.btn {
+    font-weight: bolder;
+}
+
+#block-container {
+    font-family: "Stardew Valley";
+}
+
+#title {
+    font-size: 2em;
+    color: blue;
+}
+
+#pattern {
+    font-size: 1.5em;
+}

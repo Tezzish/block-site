@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
   browser.tabs.query({active: true, currentWindow: true}, function(tabs) {
     const activeTab = tabs[0];
     const title = document.createElement('h1');
+    title.id = "title";
     const blockContainer = document.getElementById('block-container');
     if (!activeTab || activeTab.url === undefined) return;
     title.classList.add("text-white");
