@@ -292,7 +292,7 @@ browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 // Listener for messages sent from other parts of the extension
-browser.runtime.onMessage.addListener((message, sendResponse, sender) => {
+browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "tempUnblock") {
     handleTempUnblock(message, sender)
       .then(() => {
