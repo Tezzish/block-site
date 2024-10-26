@@ -35,8 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
   getFromStorage('blockedSites').then(blockedSites => {
       const url = new URL(window.location.href);
       const blockedUrl = url.searchParams.get('blockedUrl');
-      const processed = processUrl(new URL(blockedUrl));
-      const blockedTime = blockedSites.get(processed);
+      const blockedSite = new URL(blockedUrl).href;
+      const processed = processUrl(blockedSite);
+      const blockedTime = blockedSites.get(processed) || blockedSites.get(blockedSite);
       if (blockedTime) {
           // show the timer
           timer.style.visibility = 'visible';
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Send a message to the background script to unblock the site
           browser.runtime.sendMessage({
             action: "tempUnblock", 
+            blockedUrl: new URLSearchParams (new URL(window.location).search).get('blockedUrl'),
             reason: reason, 
             duration: duration, 
             passphrase: hashedPassphrase

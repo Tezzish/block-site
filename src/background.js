@@ -61,17 +61,17 @@ async function isRedirect() {
 async function redirectIfBlocked(tabId, url) {
   const redirectUrl = await isRedirect();
   isBlocked(url).then(isBlocked => {
-  if (isBlocked) {
-    if (redirectUrl) {
-      browser.tabs.update(tabId, { url: redirectUrl.href });
+    if (isBlocked) {
+      if (redirectUrl) {
+        browser.tabs.update(tabId, { url: redirectUrl.href });
+        return true;
+      }
+      const encodedUrl = encodeURIComponent(url);
+      const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
+      browser.tabs.update(tabId, { url: blockedPageUrl });
       return true;
     }
-    const encodedUrl = encodeURIComponent(url);
-    const blockedPageUrl = `content/blocked.html?blockedUrl=${encodedUrl}`;
-    browser.tabs.update(tabId, { url: blockedPageUrl });
-    return true;
-  }
-  return false;
+    return false;
   });
   return false;
 }
@@ -124,17 +124,15 @@ async function blockSite(url) {
  * @param {object} sender - The sender object containing the tab information.
  * @returns {Promise<object>} - A promise that resolves to the result of the unblock action.
  */
-async function handleTempUnblock(message, sender) {
+async function handleTempUnblock(message) {
   try {
     const storedPassphrase = await getFromStorage("passphrase");
     if (message.passphrase !== storedPassphrase) {
       return { status: "error", message: "Incorrect passphrase" };
     }
-
     const duration = parseInt(message.duration, 10);
     const reason = message.reason;
-    const urlParams = new URLSearchParams(new URL(sender.tab.url).search);
-    const blockedUrl = urlParams.get('blockedUrl');
+    const blockedUrl = message.blockedUrl;
 
     if (!blockedUrl) {
       return { status: "error", message: "Blocked URL not found" };
@@ -148,7 +146,6 @@ async function handleTempUnblock(message, sender) {
 
     return { status: "success", message: "Temporary unblock processed" };
   } catch (error) {
-    console.error("Error in handleTempUnblock:", error);
     return { status: "error", message: "An error occurred while processing the unblock" };
   }
 }
