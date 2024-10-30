@@ -35,9 +35,8 @@ async function removeTempUnblockFromStorage(url) {
  */
 async function isBlocked(url) {
   const isTempUnblocked = await isTemporarilyUnblocked(url);
-  if (isTempUnblocked) {
-    return false;
-  }
+  if (isTempUnblocked) return false;
+
   const blockedSites = await getFromStorage('blockedSites', new Map());
   const pattern = processUrl(url);
   if (pattern === undefined) return;
@@ -81,37 +80,65 @@ async function redirectBlockedToUnblocked(tabId, url) {
     return false;
   }
   const urlObj = new URL(url);
-  const urlParams = new URLSearchParams(urlObj.search);
-  const blockedUrl = urlParams.get('blockedUrl');
-  if (!blockedUrl) {
-    console.error("Blocked URL not found in query string");
+  let blockedUrl;
+  if (urlObj.search) {
+    const urlParams = new URLSearchParams(urlObj.search);
+    blockedUrl = urlParams.get('blockedUrl');
+
+    if (!blockedUrl) {
+      console.error("Blocked URL not found in query string");
+      return false;
+    }
+  } else {
+    console.error("No query parameters found in URL");
     return false;
   }
+
   const decodedUrl = decodeURIComponent(blockedUrl);
   if (!await isBlocked(decodedUrl)) {
     browser.tabs.update(tabId, { url: decodedUrl });
     return true;
   }
+
   return false;
 }
 
-async function blockSite(url) {
-  const pattern = url;
+async function blockSite(pattern) {
   if (!pattern) return;
+  let urlObj;
   try {
-    const urlObj = new URL(url);
-    if (urlObj.hostname === '') {
+    urlObj = new URL(pattern);
+    if (!urlObj.hostname) {
+      console.error("URL has no hostname:", pattern);
       return;
     }
-  } catch {} 
-  finally {
-    const blockedSites = await getFromStorage('blockedSites', new Map());
-    if (blockedSites.has(pattern)) {
-      return;
-    }
-    blockedSites.set(pattern, Date.now());
-    await setInStorage('blockedSites', blockedSites);
+  } catch (error) {
+    console.error("Invalid URL:", pattern, error);
+    return;
   }
+
+  const blockedSites = await getFromStorage('blockedSites', new Map());
+  if (blockedSites.has(pattern)) {
+    return;
+  }
+  blockedSites.set(pattern, Date.now());
+  await setInStorage('blockedSites', blockedSites);
+}
+
+/**
+ * Validates the input passphrase against the stored hashed passphrase.
+ *
+ * @param {string} inputPassphrase - The passphrase provided by the user.
+ * @returns {Promise<boolean>} - True if the passphrase is valid, false otherwise.
+ */
+async function isPassphraseValid(inputPassphrase) {
+  const storedHash = await getFromStorage('passphraseHash');
+  if (!storedHash) {
+    console.error("No passphrase set in storage");
+    return false;
+  }
+  const inputHash = await hashPassphrase(inputPassphrase);
+  return storedHash === inputHash;
 }
 
 // Temporary Unblock Functions
@@ -126,10 +153,11 @@ async function blockSite(url) {
  */
 async function handleTempUnblock(message) {
   try {
-    const storedPassphrase = await getFromStorage("passphrase");
-    if (message.passphrase !== storedPassphrase) {
+    const isValid = await isPassphraseValid(message.passphrase);
+    if (!isValid) {
       return { status: "error", message: "Incorrect passphrase" };
     }
+
     const duration = parseInt(message.duration, 10);
     const reason = message.reason;
     const blockedUrl = message.blockedUrl;
@@ -225,11 +253,8 @@ async function removeTempUnblock(message) {
  */
 async function handlePermUnblock(message) {
   try {
-    const storedPassphrase = await getFromStorage("passphrase");
-    if (!storedPassphrase) {
-      return { status: "error", message: "Passphrase not set" };
-    }
-    if (message.passphrase !== storedPassphrase) {
+    const isValid = await isPassphraseValid(message.passphrase);
+    if (!isValid) {
       return { status: "error", message: "Incorrect passphrase" };
     }
 
