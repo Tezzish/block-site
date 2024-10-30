@@ -105,17 +105,6 @@ async function redirectBlockedToUnblocked(tabId, url) {
 
 async function blockSite(pattern) {
   if (!pattern) return;
-  let urlObj;
-  try {
-    urlObj = new URL(pattern);
-    if (!urlObj.hostname) {
-      console.error("URL has no hostname:", pattern);
-      return;
-    }
-  } catch (error) {
-    console.error("Invalid URL:", pattern, error);
-    return;
-  }
 
   const blockedSites = await getFromStorage('blockedSites', new Map());
   if (blockedSites.has(pattern)) {
