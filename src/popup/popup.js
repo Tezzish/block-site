@@ -23,13 +23,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const pattern = processUrl(new URL(activeTab.url));
     patternElem.textContent += pattern;
 
-    const blockButton = document.createElement('button');
-    blockButton.id = "addSite";
-    blockButton.className = "btn btn-danger";
-    blockButton.textContent = "Block";
+    const blockSiteButton = document.createElement('button');
+    blockSiteButton.id = "addSite";
+    blockSiteButton.className = "btn btn-danger";
+    blockSiteButton.textContent = "Block site";
 
-    blockButton.addEventListener('click', async () => {
-      console.log("Adding site to blocked list" + pattern);
+    blockSiteButton.addEventListener('click', async () => {
       browser.runtime.sendMessage({
         action: "blockSite",
         pattern: processUrl(activeTab.url)
@@ -41,10 +40,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       })
     });
-    console.log(blockContainer.lastElementChild);
+
+    const blockPageButton = document.createElement('button');
+    blockPageButton.id = "addPage";
+    blockPageButton.className = "btn btn-danger";
+    blockPageButton.textContent = "Block page";
+
+    blockPageButton.addEventListener('click', async () => {
+      browser.runtime.sendMessage({
+        action: "blockSite",
+        pattern: activeTab.url
+      }).then(response => {
+        if (response.status === 'success') {
+          browser.tabs.reload(activeTab.id);
+        } else {
+          alert(response.message);
+        }
+      })
+    });
+
     blockContainer.insertBefore(title, blockContainer.lastElementChild);
     blockContainer.insertBefore(patternElem, blockContainer.lastElementChild);
-    blockContainer.insertBefore(blockButton, blockContainer.lastElementChild);
+    blockContainer.insertBefore(blockSiteButton, blockContainer.lastElementChild);
+    blockContainer.insertBefore(blockPageButton, blockContainer.lastElementChild);
   });
 
     const optionsLink = document.getElementById('options-link');
