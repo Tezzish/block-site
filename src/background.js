@@ -121,7 +121,7 @@ async function blockSite(pattern) {
  * @returns {Promise<boolean>} - True if the passphrase is valid, false otherwise.
  */
 async function isPassphraseValid(inputPassphrase) {
-  const storedHash = await getFromStorage('passphraseHash');
+  const storedHash = await getFromStorage('passphrase');
   if (!storedHash) {
     console.error("No passphrase set in storage");
     return false;
