@@ -120,13 +120,12 @@ async function blockSite(pattern) {
  * @param {string} inputPassphrase - The passphrase provided by the user.
  * @returns {Promise<boolean>} - True if the passphrase is valid, false otherwise.
  */
-async function isPassphraseValid(inputPassphrase) {
+async function isPassphraseValid(inputHash) {
   const storedHash = await getFromStorage('passphrase');
   if (!storedHash) {
     console.error("No passphrase set in storage");
-    return false;
+    throw new Error("No passphrase set in storage");
   }
-  const inputHash = await hashPassphrase(inputPassphrase);
   return storedHash === inputHash;
 }
 
@@ -141,7 +140,6 @@ async function isPassphraseValid(inputPassphrase) {
  * @returns {Promise<object>} - A promise that resolves to the result of the unblock action.
  */
 async function handleTempUnblock(message) {
-  try {
     const isValid = await isPassphraseValid(message.passphrase);
     if (!isValid) {
       return { status: "error", message: "Incorrect passphrase" };
@@ -162,9 +160,6 @@ async function handleTempUnblock(message) {
     ]);
 
     return { status: "success", message: "Temporary unblock processed" };
-  } catch (error) {
-    return { status: "error", message: "An error occurred while processing the unblock" };
-  }
 }
 
 /**
