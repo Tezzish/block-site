@@ -3,3 +3,4 @@
 *.web-ext*
 *.sites
 **/build/
+**/test_auto_sign/*
